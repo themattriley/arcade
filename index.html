@@ -100,8 +100,8 @@
       font-family: 'Press Start 2P', monospace;
       font-size: clamp(10px, 2vw, 16px);
       letter-spacing: 6px;
-      color: var(--magenta);
-      text-shadow: 0 0 10px var(--magenta), 0 0 30px var(--magenta), 0 0 60px var(--magenta);
+      color: var(--sign-color, var(--magenta));
+      text-shadow: 0 0 10px var(--sign-color, var(--magenta)), 0 0 30px var(--sign-color, var(--magenta)), 0 0 60px var(--sign-color, var(--magenta));
       animation: flicker 4s ease-in-out infinite;
     }
     @keyframes flicker {
@@ -343,14 +343,146 @@
 </div>
 
 <div class="neon-sign">
-  <h2>GAME ZONE</h2>
-  <p class="neon-sub">SELECT A MACHINE TO PLAY</p>
+  <h2>CLASSIC GAMES</h2>
+  <p class="neon-sub">ARCADE FAVORITES</p>
 </div>
 
 <div class="arcade-room">
   <div class="cabinet-hall">
 
-    <!-- 1. MUSIC MEMORY -->
+    <!-- 1. BRICK BREAKER -->
+    <a class="cabinet" href="breakout.html" style="--game-color:#f9c74f">
+      <div class="cab-marquee">BRICK<br>BREAKER</div>
+      <div class="cab-body">
+        <div class="cab-bezel">
+          <div class="cab-screen">
+            🏓
+            <div class="cab-screen-glow"></div>
+            <div class="cab-badge">01</div>
+          </div>
+        </div>
+        <div class="cab-controls">
+          <div class="cab-stick"></div>
+          <div class="cab-btns">
+            <div class="cab-btn" style="background:#f9c74f"></div>
+            <div class="cab-btn" style="background:#d4a820"></div>
+          </div>
+        </div>
+      </div>
+      <div class="cab-base"></div>
+      <div class="cab-feet"><div class="cab-foot"></div><div class="cab-foot"></div></div>
+      <div class="cab-label">BRICK BREAKER</div>
+    </a>
+
+    <!-- 2. SOLITAIRE -->
+    <a class="cabinet" href="solitaire.html" style="--game-color:#c9a84c">
+      <div class="cab-marquee">SOLITAIRE</div>
+      <div class="cab-body">
+        <div class="cab-bezel">
+          <div class="cab-screen">
+            🂱
+            <div class="cab-screen-glow"></div>
+            <div class="cab-badge">02</div>
+          </div>
+        </div>
+        <div class="cab-controls">
+          <div class="cab-stick"></div>
+          <div class="cab-btns">
+            <div class="cab-btn" style="background:#c9a84c"></div>
+            <div class="cab-btn" style="background:#8a6820"></div>
+          </div>
+        </div>
+      </div>
+      <div class="cab-base"></div>
+      <div class="cab-feet"><div class="cab-foot"></div><div class="cab-foot"></div></div>
+      <div class="cab-label">SOLITAIRE</div>
+    </a>
+
+    <!-- 3. CONNECT FOUR -->
+    <a class="cabinet" href="connect4.html" style="--game-color:#f72585">
+      <div class="cab-marquee">CONNECT FOUR</div>
+      <div class="cab-body">
+        <div class="cab-bezel">
+          <div class="cab-screen">🔴<div class="cab-screen-glow"></div><div class="cab-badge">03</div></div>
+        </div>
+        <div class="cab-controls">
+          <div class="cab-stick"></div>
+          <div class="cab-btns"><div class="cab-btn" style="background:#f72585"></div><div class="cab-btn" style="background:#f9c74f"></div></div>
+        </div>
+      </div>
+      <div class="cab-base"></div>
+      <div class="cab-feet"><div class="cab-foot"></div><div class="cab-foot"></div></div>
+      <div class="cab-label">CONNECT FOUR</div>
+    </a>
+
+    <!-- 4. ASTEROIDS -->
+    <a class="cabinet" href="asteroids.html" style="--game-color:#00f5d4">
+      <div class="cab-marquee">ASTEROIDS</div>
+      <div class="cab-body">
+        <div class="cab-bezel">
+          <div class="cab-screen">🌑<div class="cab-screen-glow"></div><div class="cab-badge">04</div></div>
+        </div>
+        <div class="cab-controls">
+          <div class="cab-stick"></div>
+          <div class="cab-btns"><div class="cab-btn" style="background:#00f5d4"></div><div class="cab-btn" style="background:#f9c74f"></div></div>
+        </div>
+      </div>
+      <div class="cab-base"></div>
+      <div class="cab-feet"><div class="cab-foot"></div><div class="cab-foot"></div></div>
+      <div class="cab-label">ASTEROIDS</div>
+    </a>
+
+    <!-- 5. FLAPPY BIRD -->
+    <a class="cabinet" href="flappy.html" style="--game-color:#f9c74f">
+      <div class="cab-marquee">FLAPPY BIRD</div>
+      <div class="cab-body">
+        <div class="cab-bezel">
+          <div class="cab-screen">🐦<div class="cab-screen-glow"></div><div class="cab-badge">05</div></div>
+        </div>
+        <div class="cab-controls">
+          <div class="cab-stick"></div>
+          <div class="cab-btns"><div class="cab-btn" style="background:#f9c74f"></div></div>
+        </div>
+      </div>
+      <div class="cab-base"></div>
+      <div class="cab-feet"><div class="cab-foot"></div><div class="cab-foot"></div></div>
+      <div class="cab-label">FLAPPY BIRD</div>
+    </a>
+
+    <!-- 6. SNAKE -->
+    <a class="cabinet" href="snake.html" style="--game-color:#06d6a0">
+      <div class="cab-marquee">SNAKE<br>CLASSIC</div>
+      <div class="cab-body">
+        <div class="cab-bezel">
+          <div class="cab-screen">
+            🐍
+            <div class="cab-screen-glow"></div>
+            <div class="cab-badge">06</div>
+          </div>
+        </div>
+        <div class="cab-controls">
+          <div class="cab-stick"></div>
+          <div class="cab-btns">
+            <div class="cab-btn" style="background:#06d6a0"></div>
+            <div class="cab-btn" style="background:#04a07a"></div>
+          </div>
+        </div>
+      </div>
+      <div class="cab-base"></div>
+      <div class="cab-feet"><div class="cab-foot"></div><div class="cab-foot"></div></div>
+      <div class="cab-label">SNAKE CLASSIC</div>
+    </a>
+
+  </div>
+
+  <div class="neon-sign" style="--sign-color:#9b5de5">
+    <h2>BRAIN GAMES</h2>
+    <p class="neon-sub">TRAIN YOUR MIND</p>
+  </div>
+
+  <div class="cabinet-hall">
+
+    <!-- 7. SOUND MEMORY -->
     <a class="cabinet" href="music.html" style="--game-color:#f72585">
       <div class="cab-marquee">SOUND<br>MEMORY</div>
       <div class="cab-body">
@@ -358,7 +490,7 @@
           <div class="cab-screen">
             🎵
             <div class="cab-screen-glow"></div>
-            <div class="cab-badge">01</div>
+            <div class="cab-badge">07</div>
           </div>
         </div>
         <div class="cab-controls">
@@ -375,79 +507,24 @@
       <div class="cab-label">SOUND MEMORY</div>
     </a>
 
-    <!-- 2. JIGSAW PUZZLE -->
-    <a class="cabinet" href="puzzle.html" style="--game-color:#00f5d4">
-      <div class="cab-marquee">JIGSAW<br>PUZZLE</div>
+    <!-- 8. N-BACK -->
+    <a class="cabinet" href="nback.html" style="--game-color:#00f5d4">
+      <div class="cab-marquee">N-BACK</div>
       <div class="cab-body">
         <div class="cab-bezel">
-          <div class="cab-screen">
-            🧩
-            <div class="cab-screen-glow"></div>
-            <div class="cab-badge">02</div>
-          </div>
+          <div class="cab-screen">🧠<div class="cab-screen-glow"></div><div class="cab-badge">08</div></div>
         </div>
         <div class="cab-controls">
           <div class="cab-stick"></div>
-          <div class="cab-btns">
-            <div class="cab-btn" style="background:#00f5d4"></div>
-            <div class="cab-btn" style="background:#00c4a8"></div>
-          </div>
+          <div class="cab-btns"><div class="cab-btn" style="background:#00f5d4"></div><div class="cab-btn" style="background:#9b5de5"></div></div>
         </div>
       </div>
       <div class="cab-base"></div>
       <div class="cab-feet"><div class="cab-foot"></div><div class="cab-foot"></div></div>
-      <div class="cab-label">JIGSAW PUZZLE</div>
+      <div class="cab-label">N-BACK</div>
     </a>
 
-    <!-- 3. SNAKE -->
-    <a class="cabinet" href="snake.html" style="--game-color:#06d6a0">
-      <div class="cab-marquee">SNAKE<br>CLASSIC</div>
-      <div class="cab-body">
-        <div class="cab-bezel">
-          <div class="cab-screen">
-            🐍
-            <div class="cab-screen-glow"></div>
-            <div class="cab-badge">03</div>
-          </div>
-        </div>
-        <div class="cab-controls">
-          <div class="cab-stick"></div>
-          <div class="cab-btns">
-            <div class="cab-btn" style="background:#06d6a0"></div>
-            <div class="cab-btn" style="background:#04a07a"></div>
-          </div>
-        </div>
-      </div>
-      <div class="cab-base"></div>
-      <div class="cab-feet"><div class="cab-foot"></div><div class="cab-foot"></div></div>
-      <div class="cab-label">SNAKE CLASSIC</div>
-    </a>
-
-    <!-- 4. BREAKOUT -->
-    <a class="cabinet" href="breakout.html" style="--game-color:#f9c74f">
-      <div class="cab-marquee">BRICK<br>BREAKER</div>
-      <div class="cab-body">
-        <div class="cab-bezel">
-          <div class="cab-screen">
-            🏓
-            <div class="cab-screen-glow"></div>
-            <div class="cab-badge">04</div>
-          </div>
-        </div>
-        <div class="cab-controls">
-          <div class="cab-stick"></div>
-          <div class="cab-btns">
-            <div class="cab-btn" style="background:#f9c74f"></div>
-            <div class="cab-btn" style="background:#d4a820"></div>
-          </div>
-        </div>
-      </div>
-      <div class="cab-base"></div>
-      <div class="cab-feet"><div class="cab-foot"></div><div class="cab-foot"></div></div>
-      <div class="cab-label">BRICK BREAKER</div>
-    </a>
-
-    <!-- 5. MEMORY MATCH -->
+    <!-- 9. MEMORY MATCH -->
     <a class="cabinet" href="memory.html" style="--game-color:#9b5de5">
       <div class="cab-marquee">MEMORY<br>MATCH</div>
       <div class="cab-body">
@@ -455,7 +532,7 @@
           <div class="cab-screen">
             🃏
             <div class="cab-screen-glow"></div>
-            <div class="cab-badge">05</div>
+            <div class="cab-badge">09</div>
           </div>
         </div>
         <div class="cab-controls">
@@ -471,31 +548,7 @@
       <div class="cab-label">MEMORY MATCH</div>
     </a>
 
-    <!-- 6. WHACK-A-MOLE -->
-    <a class="cabinet" href="solitaire.html" style="--game-color:#c9a84c">
-      <div class="cab-marquee">SOLITAIRE</div>
-      <div class="cab-body">
-        <div class="cab-bezel">
-          <div class="cab-screen">
-            🂱
-            <div class="cab-screen-glow"></div>
-            <div class="cab-badge">06</div>
-          </div>
-        </div>
-        <div class="cab-controls">
-          <div class="cab-stick"></div>
-          <div class="cab-btns">
-            <div class="cab-btn" style="background:#c9a84c"></div>
-            <div class="cab-btn" style="background:#8a6820"></div>
-          </div>
-        </div>
-      </div>
-      <div class="cab-base"></div>
-      <div class="cab-feet"><div class="cab-foot"></div><div class="cab-foot"></div></div>
-      <div class="cab-label">SOLITAIRE</div>
-    </a>
-
-    <!-- 7. REACTION TEST -->
+    <!-- 10. REACTION TEST -->
     <a class="cabinet" href="reaction.html" style="--game-color:#4cc9f0">
       <div class="cab-marquee">REACTION<br>TEST</div>
       <div class="cab-body">
@@ -503,7 +556,7 @@
           <div class="cab-screen">
             ⚡
             <div class="cab-screen-glow"></div>
-            <div class="cab-badge">07</div>
+            <div class="cab-badge">10</div>
           </div>
         </div>
         <div class="cab-controls">
@@ -517,57 +570,6 @@
       <div class="cab-base"></div>
       <div class="cab-feet"><div class="cab-foot"></div><div class="cab-foot"></div></div>
       <div class="cab-label">REACTION TEST</div>
-    </a>
-
-    <!-- 8. ASTEROIDS -->
-    <a class="cabinet" href="asteroids.html" style="--game-color:#00f5d4">
-      <div class="cab-marquee">ASTEROIDS</div>
-      <div class="cab-body">
-        <div class="cab-bezel">
-          <div class="cab-screen">🌑<div class="cab-screen-glow"></div><div class="cab-badge">08</div></div>
-        </div>
-        <div class="cab-controls">
-          <div class="cab-stick"></div>
-          <div class="cab-btns"><div class="cab-btn" style="background:#00f5d4"></div><div class="cab-btn" style="background:#f9c74f"></div></div>
-        </div>
-      </div>
-      <div class="cab-base"></div>
-      <div class="cab-feet"><div class="cab-foot"></div><div class="cab-foot"></div></div>
-      <div class="cab-label">ASTEROIDS</div>
-    </a>
-
-    <!-- 9. FLAPPY -->
-    <a class="cabinet" href="flappy.html" style="--game-color:#f9c74f">
-      <div class="cab-marquee">FLAPPY BIRD</div>
-      <div class="cab-body">
-        <div class="cab-bezel">
-          <div class="cab-screen">🐦<div class="cab-screen-glow"></div><div class="cab-badge">09</div></div>
-        </div>
-        <div class="cab-controls">
-          <div class="cab-stick"></div>
-          <div class="cab-btns"><div class="cab-btn" style="background:#f9c74f"></div></div>
-        </div>
-      </div>
-      <div class="cab-base"></div>
-      <div class="cab-feet"><div class="cab-foot"></div><div class="cab-foot"></div></div>
-      <div class="cab-label">FLAPPY BIRD</div>
-    </a>
-
-    <!-- 10. TYPE RUSH -->
-    <a class="cabinet" href="typerace.html" style="--game-color:#f72585">
-      <div class="cab-marquee">TYPE RUSH</div>
-      <div class="cab-body">
-        <div class="cab-bezel">
-          <div class="cab-screen">⌨️<div class="cab-screen-glow"></div><div class="cab-badge">10</div></div>
-        </div>
-        <div class="cab-controls">
-          <div class="cab-stick"></div>
-          <div class="cab-btns"><div class="cab-btn" style="background:#f72585"></div><div class="cab-btn" style="background:#c41a6a"></div></div>
-        </div>
-      </div>
-      <div class="cab-base"></div>
-      <div class="cab-feet"><div class="cab-foot"></div><div class="cab-foot"></div></div>
-      <div class="cab-label">TYPE RUSH</div>
     </a>
 
     <!-- 11. STROOP -->
@@ -587,94 +589,27 @@
       <div class="cab-label">STROOP TEST</div>
     </a>
 
-    <!-- 12. DODGE -->
-    <a class="cabinet" href="dodge.html" style="--game-color:#06d6a0">
-      <div class="cab-marquee">DODGE BLASTER</div>
+    <!-- 12. TYPE RUSH -->
+    <a class="cabinet" href="typerace.html" style="--game-color:#f72585">
+      <div class="cab-marquee">TYPE RUSH</div>
       <div class="cab-body">
         <div class="cab-bezel">
-          <div class="cab-screen">🚀<div class="cab-screen-glow"></div><div class="cab-badge">12</div></div>
+          <div class="cab-screen">⌨️<div class="cab-screen-glow"></div><div class="cab-badge">12</div></div>
         </div>
         <div class="cab-controls">
           <div class="cab-stick"></div>
-          <div class="cab-btns"><div class="cab-btn" style="background:#06d6a0"></div></div>
+          <div class="cab-btns"><div class="cab-btn" style="background:#f72585"></div><div class="cab-btn" style="background:#c41a6a"></div></div>
         </div>
       </div>
       <div class="cab-base"></div>
       <div class="cab-feet"><div class="cab-foot"></div><div class="cab-foot"></div></div>
-      <div class="cab-label">DODGE BLASTER</div>
-    </a>
-
-    <!-- 13. TIC-TAC-TOE -->
-    <a class="cabinet" href="tictactoe.html" style="--game-color:#fb8500">
-      <div class="cab-marquee">TIC-TAC-TOE</div>
-      <div class="cab-body">
-        <div class="cab-bezel">
-          <div class="cab-screen">✖️<div class="cab-screen-glow"></div><div class="cab-badge">13</div></div>
-        </div>
-        <div class="cab-controls">
-          <div class="cab-stick"></div>
-          <div class="cab-btns"><div class="cab-btn" style="background:#fb8500"></div><div class="cab-btn" style="background:#c86a00"></div></div>
-        </div>
-      </div>
-      <div class="cab-base"></div>
-      <div class="cab-feet"><div class="cab-foot"></div><div class="cab-foot"></div></div>
-      <div class="cab-label">TIC-TAC-TOE</div>
-    </a>
-
-    <!-- 14. PAPER RUN -->
-    <a class="cabinet" href="paperboy.html" style="--game-color:#f9c74f">
-      <div class="cab-marquee">PAPER RUN</div>
-      <div class="cab-body">
-        <div class="cab-bezel">
-          <div class="cab-screen">🗞️<div class="cab-screen-glow"></div><div class="cab-badge">14</div></div>
-        </div>
-        <div class="cab-controls">
-          <div class="cab-stick"></div>
-          <div class="cab-btns"><div class="cab-btn" style="background:#f9c74f"></div><div class="cab-btn" style="background:#fb8500"></div></div>
-        </div>
-      </div>
-      <div class="cab-base"></div>
-      <div class="cab-feet"><div class="cab-foot"></div><div class="cab-foot"></div></div>
-      <div class="cab-label">PAPER RUN</div>
-    </a>
-
-    <!-- 15. CONNECT FOUR -->
-    <a class="cabinet" href="connect4.html" style="--game-color:#f72585">
-      <div class="cab-marquee">CONNECT FOUR</div>
-      <div class="cab-body">
-        <div class="cab-bezel">
-          <div class="cab-screen">🔴<div class="cab-screen-glow"></div><div class="cab-badge">15</div></div>
-        </div>
-        <div class="cab-controls">
-          <div class="cab-stick"></div>
-          <div class="cab-btns"><div class="cab-btn" style="background:#f72585"></div><div class="cab-btn" style="background:#f9c74f"></div></div>
-        </div>
-      </div>
-      <div class="cab-base"></div>
-      <div class="cab-feet"><div class="cab-foot"></div><div class="cab-foot"></div></div>
-      <div class="cab-label">CONNECT FOUR</div>
-    </a>
-
-    <a class="cabinet" href="nback.html" style="--game-color:#00f5d4">
-      <div class="cab-marquee">N-BACK</div>
-      <div class="cab-body">
-        <div class="cab-bezel">
-          <div class="cab-screen">🧠<div class="cab-screen-glow"></div><div class="cab-badge">16</div></div>
-        </div>
-        <div class="cab-controls">
-          <div class="cab-stick"></div>
-          <div class="cab-btns"><div class="cab-btn" style="background:#00f5d4"></div><div class="cab-btn" style="background:#9b5de5"></div></div>
-        </div>
-      </div>
-      <div class="cab-base"></div>
-      <div class="cab-feet"><div class="cab-foot"></div><div class="cab-foot"></div></div>
-      <div class="cab-label">N-BACK</div>
+      <div class="cab-label">TYPE RUSH</div>
     </a>
 
   </div>
 
   <div class="status-bar">
-    ▼ &nbsp; 16 MACHINES AVAILABLE &nbsp; ▼
+    ▼ &nbsp; 12 MACHINES AVAILABLE &nbsp; ▼
     <br><br>
     <a href="leaderboard.html" style="font-family:'Press Start 2P',monospace;font-size:9px;color:#f9c74f;text-decoration:none;letter-spacing:2px;border:1px solid #f9c74f;padding:10px 20px;display:inline-block;transition:all .2s;box-shadow:0 0 10px rgba(249,199,79,.2)">🏆 VIEW LEADERBOARD</a>
   </div>
