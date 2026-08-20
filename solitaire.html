@@ -560,6 +560,11 @@ body.is-dragging .card:hover {
   .title { font-size: 13px; letter-spacing: 3px; }
   header { padding: 10px 12px 8px; }
   .btn { font-size: 8px; padding: 6px 12px; }
+  /* Button row was pinned hard-right by header's space-between, putting
+     NEW GAME at the extreme edge of the screen on mobile — give it its
+     own centered row instead, well within thumb reach. */
+  header { flex-wrap: wrap; row-gap: 10px; }
+  .header-btns { flex: 1 0 100%; justify-content: center; }
   /* Touch has no persistent hover — disable lift entirely on mobile */
   .card:hover { transform: none !important; box-shadow: 0 1px 2px rgba(0,0,0,0.22), 0 4px 10px rgba(0,0,0,0.18), 0 10px 20px rgba(0,0,0,0.10) !important; }
 }
@@ -583,7 +588,7 @@ body.is-dragging .card:hover {
       <div class="stat-value" id="time-display">0:00</div>
     </div>
   </div>
-  <div style="display:flex;gap:8px">
+  <div class="header-btns" style="display:flex;gap:8px">
     <button class="btn btn-ghost" id="mode-btn">DRAW 1</button>
     <button class="btn btn-ghost" id="undo-btn">UNDO</button>
     <button class="btn" id="new-btn">NEW GAME</button>
@@ -808,36 +813,10 @@ function clickStock() {
   moves++;
   updateHUD(); render();
   if (!gameStarted) startTimer();
-  // If stock just ran dry and all tableau cards are face-up, offer auto-complete
-  if (stock.length === 0 && waste.length === 0) {
-    const hasFaceDown = tableau.some(col => col.some(c => !c.faceUp));
-    if (!hasFaceDown) setTimeout(() => { if (!drag && !pendingDrag) autoComplete(); }, 300);
-  }
+  maybeAutoComplete();
 }
 
 // ── MOVE VALIDATION ────────────────────────────────────────────────────────
-function tryMoveToFoundation(card, fromType, fromIdx, fromCardIdx) {
-  for (let fi = 0; fi < 4; fi++) {
-    if (canStackOnFoundation(card, foundations[fi])) {
-      saveHistory();
-      // Always re-find by ID to avoid stale index
-      const realIdx = findCardIndex(fromType, fromIdx, card.id);
-      if (realIdx === -1) return false;
-      removeCard(fromType, fromIdx, realIdx);
-      foundations[fi].push(card);
-      card.faceUp = true;
-      addScore(fromType === 'waste' ? 10 : 15);
-      moves++;
-      autoFlipTableau(fromIdx, fromType);
-      updateHUD(); render();
-      checkWin();
-      if (!gameStarted) startTimer();
-      return true;
-    }
-  }
-  return false;
-}
-
 function tryMoveToTableau(cards, fromType, fromIdx, fromCardIdx, toColIdx) {
   if (!cards || cards.length === 0) return false;
   if (typeof toColIdx !== 'number' || isNaN(toColIdx)) return false;
@@ -855,6 +834,16 @@ function tryMoveToTableau(cards, fromType, fromIdx, fromCardIdx, toColIdx) {
   if (fromType === 'tableau') {
     if (!tableau[fromIdx] || realIdx >= tableau[fromIdx].length) return false;
     toMove = tableau[fromIdx].slice(realIdx);
+    // Defense-in-depth: a grabbed group must be an internally valid
+    // descending, alternating-color run — not just have a first card that
+    // happens to fit the destination. Should always hold true under
+    // correct play (cards can only ever be legally added following this
+    // rule), but rejecting a malformed group here stops any future bug
+    // elsewhere from being able to smear an invalid sequence onto a
+    // destination column.
+    for (let i = 0; i < toMove.length - 1; i++) {
+      if (!canStackOnTableau(toMove[i + 1], toMove[i])) return false;
+    }
   } else if (fromType === 'waste') {
     if (!waste.length) return false;
     toMove = [waste[waste.length - 1]];
@@ -873,6 +862,7 @@ function tryMoveToTableau(cards, fromType, fromIdx, fromCardIdx, toColIdx) {
   autoFlipTableau(fromIdx, fromType);
   updateHUD(); render();
   if (!gameStarted) startTimer();
+  maybeAutoComplete();
   return true;
 }
 
@@ -885,6 +875,20 @@ function tryMoveToFoundation(card, fromType, fromIdx, fromCardIdx) {
     const realIdx = findCardIndex(fromType, fromIdx, card.id);
     if (realIdx === -1) continue; // try next foundation rather than abort
 
+    // The card must actually be the LAST (topmost/accessible) card in its
+    // source pile. Every face-up tableau card gets its own click/dblclick
+    // listener (so the exposed sliver of a buried card is still clickable
+    // for stacking purposes), but only the true top-of-pile card is
+    // legally movable to a foundation. Without this check, double-clicking
+    // a card buried under other face-up cards in a valid run would splice
+    // it straight out of the middle of the pile, silently leaving the
+    // cards that were stacked on top of it behind.
+    const sourcePile = fromType === 'tableau' ? tableau[fromIdx]
+                      : fromType === 'waste' ? waste
+                      : fromType === 'foundation' ? foundations[fromIdx]
+                      : null;
+    if (!sourcePile || realIdx !== sourcePile.length - 1) continue;
+
     // ── Everything validated — safe to mutate ─────────────────────────
     saveHistory();
     removeCard(fromType, fromIdx, realIdx);
@@ -896,6 +900,7 @@ function tryMoveToFoundation(card, fromType, fromIdx, fromCardIdx) {
     updateHUD(); render();
     checkWin();
     if (!gameStarted) startTimer();
+    maybeAutoComplete();
     return true;
   }
   return false;
@@ -907,8 +912,14 @@ function findCardIndex(type, idx, cardId) {
     if (!Array.isArray(tableau[idx])) return -1;
     return tableau[idx].findIndex(c => c.id === cardId);
   } else if (type === 'waste') {
-    const i = waste.findIndex(c => c.id === cardId);
-    return i !== -1 ? i : waste.length - 1;
+    // Honest -1 when not found — matching tableau/foundation below.
+    // A silent fallback to "assume it's the current top of waste" here
+    // previously let a stale double-click/dblclick reference (for a card
+    // already moved by an earlier event in the same gesture) sail past
+    // every "realIdx === -1" guard in the callers, causing that stale
+    // card to be duplicated into a second foundation pile while silently
+    // deleting whatever card actually occupied that position.
+    return waste.findIndex(c => c.id === cardId);
   } else if (type === 'foundation') {
     if (!Array.isArray(foundations[idx])) return -1;
     return foundations[idx].findIndex(c => c.id === cardId);
@@ -1197,6 +1208,7 @@ function onDragEnd(e) {
               autoFlipTableau(drag.fromIdx, drag.fromType);
               updateHUD(); render(); checkWin();
               if (!gameStarted) startTimer();
+              maybeAutoComplete();
             }
           } else {
             tryMoveToFoundation(card, drag.fromType, drag.fromIdx, drag.fromCardIdx);
@@ -1670,8 +1682,10 @@ function renderStock() {
     }
     pile.appendChild(el);
   }
-  const slot = document.getElementById('stock-slot');
-  slot.onclick = clickStock;
+  // Only the container gets a click handler — #stock-slot is a CHILD of
+  // #stock-pile, so a click on the slot would otherwise bubble up and also
+  // trigger the pile's handler, firing clickStock() twice per single tap
+  // (silently recycling AND drawing in the same motion when stock is empty).
 }
 
 function renderWaste() {
@@ -1833,30 +1847,60 @@ function renderTableau() {
 }
 
 // ── AUTO-COMPLETE ───────────────────────────────────────────────────────────
-function autoComplete() {
-  // If all cards are face up (stock empty, waste empty or all face up), auto-move to foundations
-  if (stock.length > 0) return;
-  let changed = true;
-  while (changed) {
-    changed = false;
-    // Check waste
-    if (waste.length > 0) {
-      const card = waste[waste.length-1];
-      for (let fi = 0; fi < 4; fi++) {
-        if (canStackOnFoundation(card, foundations[fi])) {
-          saveHistory();
-          waste.pop();
-          foundations[fi].push(card);
-          addScore(10); moves++;
-          changed = true; break;
-        }
+// ── AUTO-COMPLETE CASCADE ────────────────────────────────────────────────
+// Once the stock is empty and every tableau card is face-up, no hidden
+// information remains anywhere — the game is guaranteed winnable by simply
+// feeding cards to the foundations in the right order. At that point we
+// finish it automatically with a visible, rapid-succession cascade rather
+// than making the player keep clicking.
+let autoCompleting = false;
+
+function isFullyRevealed() {
+  return stock.length === 0 && !tableau.some(col => col.some(c => !c.faceUp));
+}
+
+// Call this after any move completes — cheap to call often, only acts
+// when the position has just become guaranteed-winnable.
+function maybeAutoComplete() {
+  if (autoCompleting || drag || pendingDrag) return;
+  if (!isFullyRevealed()) return;
+  // Nothing to do if foundations are already complete (win already fired)
+  if (foundations.every(f => f.length === 13)) return;
+  setTimeout(() => {
+    if (!autoCompleting && !drag && !pendingDrag) autoCompleteCascade();
+  }, 350); // brief pause so the triggering move is visible first
+}
+
+function autoCompleteCascade() {
+  if (autoCompleting) return;
+  autoCompleting = true;
+  cascadeStep();
+}
+
+function cascadeStep() {
+  let moved = false;
+
+  // Prefer the waste pile first, then tableau columns left to right —
+  // same priority the old synchronous version used.
+  if (waste.length > 0) {
+    const card = waste[waste.length - 1];
+    for (let fi = 0; fi < 4; fi++) {
+      if (canStackOnFoundation(card, foundations[fi])) {
+        saveHistory();
+        waste.pop();
+        foundations[fi].push(card);
+        addScore(10); moves++;
+        moved = true;
+        break;
       }
     }
-    // Check tableau tops
-    for (let ci = 0; ci < 7; ci++) {
+  }
+
+  if (!moved) {
+    for (let ci = 0; ci < 7 && !moved; ci++) {
       const col = tableau[ci];
       if (col.length === 0) continue;
-      const card = col[col.length-1];
+      const card = col[col.length - 1];
       if (!card.faceUp) continue;
       for (let fi = 0; fi < 4; fi++) {
         if (canStackOnFoundation(card, foundations[fi])) {
@@ -1864,17 +1908,26 @@ function autoComplete() {
           col.pop();
           foundations[fi].push(card);
           addScore(15); moves++;
-          // Flip newly exposed card if face-down
-          if (col.length > 0 && !col[col.length-1].faceUp) {
-            col[col.length-1].faceUp = true;
+          if (col.length > 0 && !col[col.length - 1].faceUp) {
+            col[col.length - 1].faceUp = true;
             addScore(5);
           }
-          changed = true; break;
+          moved = true;
+          break;
         }
       }
-      if (changed) break;
     }
-    if (changed) { updateHUD(); render(); checkWin(); }
+  }
+
+  updateHUD(); render();
+
+  if (moved) {
+    // Rapid succession — fast enough to feel like a cascade, slow enough
+    // that the browser actually paints each individual card landing.
+    setTimeout(cascadeStep, 90);
+  } else {
+    autoCompleting = false;
+    checkWin(); // fires fireworks/waterfall/LB submit if all 52 made it home
   }
 }
 
