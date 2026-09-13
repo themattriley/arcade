@@ -273,7 +273,7 @@ function endGame(result, winner, winLine) {
     const sub  = mode==='cpu' ? (winner===1?'YOU WON! 🎉':'CPU WINS...') : 'FOUR IN A ROW!';
     statusEl.className='status win';
     statusEl.textContent=name+' WINS!';
-    setTimeout(()=>showEndOverlay(`<span style="color:${color}">${name} WINS!</span>`, sub), 700);
+    setTimeout(()=>showEndOverlay(`<span style="color:${color}">${name} WINS!</span>`, sub), 2000);
   } else {
     draws++; drawsRowEl.textContent=`DRAWS: ${draws}`;
     boardEl.className='board glow-draw';
