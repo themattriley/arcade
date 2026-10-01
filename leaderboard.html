@@ -39,6 +39,14 @@
     .action-btn:hover{border-color:var(--cyan);color:var(--cyan)}
     .action-btn.danger:hover{border-color:var(--magenta);color:var(--magenta)}
 
+
+    /* Section headers — same neon sign look as the arcade hub */
+    .lb-section{margin-bottom:52px}
+    .lb-section:last-child{margin-bottom:0}
+    .neon-sign{text-align:center;margin:0 0 26px}
+    .neon-sign h2{font-family:'Press Start 2P',monospace;font-size:clamp(10px,2vw,16px);letter-spacing:6px;color:var(--sign-color);text-shadow:0 0 10px var(--sign-color),0 0 30px var(--sign-color),0 0 60px var(--sign-color);animation:flicker 4s ease-in-out infinite}
+    .neon-sub{font-family:'Press Start 2P',monospace;font-size:7px;color:var(--muted);letter-spacing:3px;margin-top:10px}
+    @keyframes flicker{0%,100%{opacity:1}92%{opacity:1}93%{opacity:.6}94%{opacity:1}97%{opacity:.8}98%{opacity:1}}
     .lb-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:20px}
 
     .game-card{background:#08081a;border:1px solid var(--border);padding:22px 18px;position:relative}
@@ -92,7 +100,7 @@
     </div>
   </div>
 
-  <div class="lb-grid" id="lb-grid"></div>
+  <div id="lb-sections"></div>
 </div>
 
 <!-- Confirm dialog -->
@@ -108,23 +116,29 @@
 <script src="firebase-config.js"></script>
 <script src="leaderboard.js"></script>
 <script>
+// Mirrors the arcade hub (index.html) exactly: same two sections, same order.
+// `id` must match the string each game passes to LB.submit().
+const SECTIONS = [
+  { key:'classic', title:'CLASSIC GAMES', sub:'ARCADE FAVORITES', color:'#f72585' },
+  { key:'brain',   title:'BRAIN GAMES',   sub:'TRAIN YOUR MIND',  color:'#9b5de5' },
+];
 const GAMES = [
-  { id:'sound_memory',  title:'SOUND\nMEMORY',   icon:'🎵', color:'#f72585', formula:'Score = rounds cleared × 100' },
-  { id:'jigsaw_puzzle', title:'JIGSAW\nPUZZLE',   icon:'🧩', color:'#00f5d4', formula:'Score = 10000 ÷ (moves×60% + time×40%) × difficulty multiplier' },
-  { id:'snake',         title:'SNAKE\nCLASSIC',   icon:'🐍', color:'#06d6a0', formula:'Score = food eaten × (10 + level bonus)' },
-  { id:'breakout',      title:'BRICK\nBREAKER',   icon:'🏓', color:'#f9c74f', formula:'Score = bricks broken × level multiplier' },
-  { id:'memory_match',  title:'MEMORY\nMATCH',    icon:'🃏', color:'#9b5de5', formula:'Score = pairs × 1200 ÷ (flips×55% + time×45%)' },
-  { id:'solitaire',     title:'SOLITAIRE',         icon:'🂡', color:'#c9a84c', formula:'Score = foundation moves + flips \u2212 recycle penalties' },
-  { id:'reaction',      title:'REACTION\nTEST',   icon:'⚡', color:'#4cc9f0', formula:'Score = 50000 ÷ avg reaction time (ms)' },
-  { id:'asteroids',     title:'ASTEROIDS',         icon:'🌑', color:'#00f5d4', formula:'Score = asteroids destroyed × wave multiplier' },
-  { id:'flappy',        title:'FLAPPY\nBIRD',      icon:'🐦', color:'#f9c74f', formula:'Score = pipes passed' },
-  { id:'typerace',      title:'TYPE\nRUSH',        icon:'⌨️', color:'#f72585', formula:'Score = WPM × accuracy%' },
-  { id:'stroop',        title:'STROOP\nTEST',      icon:'🎨', color:'#9b5de5', formula:'Score = correct × 100 ÷ (time×50% + errors×50%)' },
-  { id:'dodge',         title:'DODGE\nBLASTER',   icon:'🚀', color:'#06d6a0', formula:'Score = survival time × level bonus' },
-  { id:'tictactoe',     title:'TIC-TAC\nTOE',      icon:'✖️', color:'#fb8500', formula:'Score = wins × 100 + speed bonus per win' },
-  { id:'paperboy',      title:'PAPER\nRUN',        icon:'🗞️', color:'#f9c74f', formula:'Score = 100 per delivery × streak multiplier' },
-  { id:'connect4',      title:'CONNECT\nFOUR',     icon:'🔴', color:'#f72585', formula:'Score = wins × 100 + difficulty bonus' },
-  { id:'nback',         title:'N-BACK\nMEMORY',    icon:'🧠', color:'#00f5d4', formula:'Score = weighted hits/misses × N-level multiplier' },
+  // ── Classic Games ──
+  { section:'classic', id:'breakout',     title:'BRICK\nBREAKER',  icon:'🏓', color:'#f9c74f', formula:'Score = bricks broken × level multiplier' },
+  { section:'classic', id:'solitaire',    title:'SOLITAIRE',        icon:'🂡', color:'#c9a84c', formula:'Score = foundation moves + flips \u2212 recycle penalties' },
+  { section:'classic', id:'freecell',     title:'FREECELL',         icon:'🂡', color:'#c9a84c', formula:'Score = 10/card home + win bonus \u2212 time & move penalties' },
+  { section:'classic', id:'connect4',     title:'CONNECT\nFOUR',    icon:'🔴', color:'#f72585', formula:'Score = wins × 100 + difficulty bonus' },
+  { section:'classic', id:'asteroids',    title:'ASTEROIDS',        icon:'🌑', color:'#00f5d4', formula:'Score = asteroids destroyed × wave multiplier' },
+  { section:'classic', id:'flappy',       title:'FLAPPY\nBIRD',     icon:'🐦', color:'#f9c74f', formula:'Score = pipes passed' },
+  { section:'classic', id:'snake',        title:'SNAKE\nCLASSIC',  icon:'🐍', color:'#06d6a0', formula:'Score = food eaten × (10 + level bonus)' },
+  // ── Brain Games ──
+  { section:'brain',   id:'sound_memory', title:'SOUND\nMEMORY',   icon:'🎵', color:'#f72585', formula:'Score = rounds cleared × 100' },
+  { section:'brain',   id:'nback',        title:'N-BACK\nMEMORY',   icon:'🧠', color:'#00f5d4', formula:'Score = weighted hits/misses × N-level multiplier' },
+  { section:'brain',   id:'memory_match', title:'MEMORY\nMATCH',    icon:'🃏', color:'#9b5de5', formula:'Score = pairs × 1200 ÷ (flips×55% + time×45%)' },
+  { section:'brain',   id:'reaction',     title:'REACTION\nTEST',   icon:'⚡', color:'#4cc9f0', formula:'Score = 50000 ÷ avg reaction time (ms)' },
+  { section:'brain',   id:'stroop',       title:'STROOP\nTEST',     icon:'🎨', color:'#9b5de5', formula:'Score = correct × 100 ÷ (time×50% + errors×50%)' },
+  { section:'brain',   id:'typerace',     title:'TYPE\nRUSH',       icon:'⌨️', color:'#f72585', formula:'Score = WPM × accuracy%' },
+  { section:'brain',   id:'wordle',       title:'WORDLE',           icon:'🟩', color:'#9b5de5', formula:'Score = 600/500/400/300/200/100 by guess count + streak bonus' },
 ];
 
 function fmtDate(ts) {
@@ -142,32 +156,44 @@ function renderCard(game, entries, loading) {
   } else {
     rows = entries.map((e, i) => `
       <div class="lb-row">
-        <span class="lb-rank${i<3?' top':''}">${['🥇','🥈','🥉'][i]||(i+1)+'.'}</span>
-        <span class="lb-init">${(e.i||'???').trim()}</span>
-        <span class="lb-sc">${(e.s||0).toLocaleString()}</span>
-        <span class="lb-date">${fmtDate(e.d||0)}</span>
-      </div>`).join('');
+        <span class="lb-rank${i<3?' top':''}">${['🥇','🥈','🥉'][i]||(i+1)+'.'}<\/span>
+        <span class="lb-init">${(e.i||'???').trim()}<\/span>
+        <span class="lb-sc">${(e.s||0).toLocaleString()}<\/span>
+        <span class="lb-date">${fmtDate(e.d||0)}<\/span>
+      <\/div>`).join('');
   }
   return `
     <div class="gc-header">
-      <span class="gc-icon">${game.icon}</span>
-      <span class="gc-title">${titleLines}</span>
-      <span class="gc-count">${loading ? '...' : (entries||[]).length + '/10'}</span>
-    </div>
+      <span class="gc-icon">${game.icon}<\/span>
+      <span class="gc-title">${titleLines}<\/span>
+      <span class="gc-count">${loading ? '...' : (entries||[]).length + '/10'}<\/span>
+    <\/div>
     ${rows}
-    <div class="formula">${game.formula}</div>`;
+    <div class="formula">${game.formula}<\/div>`;
 }
 
 function buildGrid(loadingAll) {
-  const grid = document.getElementById('lb-grid');
-  grid.innerHTML = '';
-  GAMES.forEach(game => {
-    const card = document.createElement('div');
-    card.className = 'game-card';
-    card.style.setProperty('--gc-color', game.color);
-    card.id = 'card-' + game.id;
-    card.innerHTML = renderCard(game, [], loadingAll);
-    grid.appendChild(card);
+  const root = document.getElementById('lb-sections');
+  root.innerHTML = '';
+  SECTIONS.forEach(sec => {
+    const wrap = document.createElement('section');
+    wrap.className = 'lb-section';
+    wrap.innerHTML = `
+      <div class="neon-sign" style="--sign-color:${sec.color}">
+        <h2>${sec.title}<\/h2>
+        <p class="neon-sub">${sec.sub}<\/p>
+      <\/div>
+      <div class="lb-grid"><\/div>`;
+    const grid = wrap.querySelector('.lb-grid');
+    GAMES.filter(g => g.section === sec.key).forEach(game => {
+      const card = document.createElement('div');
+      card.className = 'game-card';
+      card.style.setProperty('--gc-color', game.color);
+      card.id = 'card-' + game.id;
+      card.innerHTML = renderCard(game, [], loadingAll);
+      grid.appendChild(card);
+    });
+    root.appendChild(wrap);
   });
 }
 
