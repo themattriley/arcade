@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
-  <title>Wordle — Arcade</title>
+  <title>Word Scramble — Arcade</title>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
   <style>
     :root{
@@ -113,7 +113,7 @@
       <button class="icon-btn" id="settings-btn" title="Settings">⚙</button>
     </div>
   </nav>
-  <h1>WORDLE</h1>
+  <h1>WORD SCRAMBLE</h1>
   <div class="sub" id="puzzle-label">DAILY PUZZLE</div>
 
   <div class="board" id="board"></div>
@@ -356,7 +356,7 @@ function shareText(){
   const sq = settings.cb ? {correct:'🟧',present:'🟦',absent:'⬛'} : {correct:'🟩',present:'🟨',absent:'⬛'};
   const lines = state.guesses.map(g=>evaluate(g,ANSWER).map(x=>sq[x]).join(''));
   const n = state.status==='won' ? state.guesses.length : 'X';
-  return `GONZO'S WORDLE #${PUZZLE_NO} ${n}/6${settings.hard?'*':''}\n\n${lines.join('\n')}\n\ngonzogonzo.com`;
+  return `GONZO'S WORD SCRAMBLE #${PUZZLE_NO} ${n}/6${settings.hard?'*':''}\n\n${lines.join('\n')}\n\ngonzogonzo.com`;
 }
 async function share(){
   const text=shareText();
