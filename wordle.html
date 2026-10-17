@@ -85,6 +85,22 @@
     .btn.ghost{background:transparent;color:var(--text);border:1px solid var(--border);box-shadow:none}
     .lb-note{font-size:10px;color:var(--muted);text-align:center;margin-top:12px;letter-spacing:1px}
 
+    /* archive */
+    .arch-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+    .arch-item{border:1.5px solid var(--border);background:transparent;color:var(--text);border-radius:10px;padding:8px 2px;cursor:pointer;font-family:'Nunito',sans-serif;font-weight:800;font-size:14px;line-height:1.3}
+    .arch-item small{display:block;font-size:10px;font-weight:700;color:var(--muted)}
+    .arch-item:hover{border-color:var(--purple)}
+    .arch-item.won{border-color:var(--correct)}
+    .arch-item.lost{border-color:var(--magenta)}
+    .arch-item.playing{border-color:var(--present)}
+    .arch-item.cur{background:#1a1a30}
+    .arch-note{font-size:12px;line-height:1.6;color:#c8c8e8;text-align:center}
+    .arch-legend{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);margin-top:12px}
+    .arch-legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px;vertical-align:-1px;border:2px solid}
+    .arch-row{display:none;gap:10px;justify-content:center;margin-top:14px;flex-wrap:wrap}
+    .btn.small{font-size:12px;padding:8px 14px;border-radius:10px}
+    #today-btn{display:none}
+
     /* settings */
     .setting{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid var(--border);gap:14px}
     .setting:last-of-type{border-bottom:none}
@@ -109,12 +125,14 @@
     <a class="back-btn" href="index.html">ARCADE</a>
     <div class="toolbar">
       <button class="icon-btn" id="help-btn" title="How to play">?</button>
+      <button class="icon-btn" id="archive-btn" title="Past puzzles" aria-label="Past puzzles">&#128197;</button>
       <button class="icon-btn" id="stats-btn" title="Statistics">▦</button>
       <button class="icon-btn" id="settings-btn" title="Settings">⚙</button>
     </div>
   </nav>
   <h1>WORD SCRAMBLE</h1>
   <div class="sub" id="puzzle-label">DAILY PUZZLE</div>
+  <button class="btn ghost small" id="today-btn">◄ BACK TO TODAY'S PUZZLE</button>
 
   <div class="board" id="board"></div>
 
@@ -138,10 +156,25 @@
     <div class="dist" id="dist"></div>
     <div class="answer-reveal" id="answer-reveal" style="display:none"></div>
     <div class="next" id="next-row" style="display:none">
-      <div><div class="lbl">Next puzzle</div><div class="clock" id="clock">00:00:00</div></div>
+      <div id="clock-box"><div class="lbl">Next puzzle</div><div class="clock" id="clock">00:00:00</div></div>
       <button class="btn" id="share-btn">⇪ SHARE</button>
     </div>
+    <div class="arch-row" id="arch-row">
+      <button class="btn ghost small" id="arch-open2">PAST PUZZLES</button>
+      <button class="btn small" id="arch-today2">TODAY'S PUZZLE</button>
+    </div>
     <div class="lb-note" id="lb-note" style="display:none"></div>
+  </div>
+</div>
+
+<!-- ARCHIVE -->
+<div class="overlay" id="archive-overlay">
+  <div class="modal">
+    <button class="close" data-close="archive-overlay">×</button>
+    <h2>PAST PUZZLES</h2>
+    <p class="arch-note">Missed a day? Play any earlier puzzle. Archive games are practice only &mdash; they don't change your streak, stats or leaderboard score.</p>
+    <div class="arch-grid" id="arch-grid"></div>
+    <div class="arch-legend"><span><i style="border-color:var(--correct)"></i>SOLVED</span><span><i style="border-color:var(--magenta)"></i>MISSED</span><span><i style="border-color:var(--present)"></i>STARTED</span></div>
   </div>
 </div>
 
@@ -173,7 +206,7 @@
     <p><b>I</b> is in the word but in the wrong spot.</p>
     <div class="ex"><div class="tile">V</div><div class="tile">A</div><div class="tile">G</div><div class="tile absent">U</div><div class="tile">E</div></div>
     <p><b>U</b> is not in the word anywhere.</p>
-    <p>A new puzzle arrives every day at midnight — everyone gets the same word.</p>
+    <p>A new puzzle arrives every day at midnight — everyone gets the same word. Missed a day? Tap the calendar button to play past puzzles for practice.</p>
   </div>
 </div>
 
@@ -200,19 +233,33 @@ const EPOCH = new Date(2026, 9, 1); // puzzle #1 = 1 Oct 2026 (local)
 function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;}}
 const ORDER = (()=>{const idx=ANSWERS.map((_,i)=>i);const rnd=mulberry32(20261001);for(let i=idx.length-1;i>0;i--){const j=Math.floor(rnd()*(i+1));[idx[i],idx[j]]=[idx[j],idx[i]];}return idx;})();
 function localDayNumber(d=new Date()){const today=new Date(d.getFullYear(),d.getMonth(),d.getDate());return Math.floor((today-EPOCH)/86400000);}
-const DAY = localDayNumber();
-const PUZZLE_NO = DAY + 1;
-const ANSWER = ANSWERS[ORDER[((DAY % ANSWERS.length)+ANSWERS.length)%ANSWERS.length]];
+function answerFor(day){ return ANSWERS[ORDER[((day % ANSWERS.length)+ANSWERS.length)%ANSWERS.length]]; }
+function dateFor(day){ return new Date(EPOCH.getFullYear(),EPOCH.getMonth(),EPOCH.getDate()+day); }
+const TODAY = localDayNumber();     // today's daily puzzle (never changes during a page load)
+let DAY = TODAY;                    // the puzzle currently on the board (may be a past day)
+let PUZZLE_NO = DAY + 1;
+let ANSWER = answerFor(DAY);
+let isArchive = false;              // true while playing a past puzzle (practice only)
 
 // ── STATE / STORAGE ──────────────────────────────────────────────────────────
-const K_STATE='gz_wordle_state', K_STATS='gz_wordle_stats', K_SET='gz_wordle_settings';
+const K_STATE='gz_wordle_state', K_STATS='gz_wordle_stats', K_SET='gz_wordle_settings', K_ARCH='gz_wordle_archive';
 function load(k,def){try{const v=JSON.parse(localStorage.getItem(k));return v??def;}catch{return def;}}
 function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch{}}
 
 let settings = Object.assign({hard:false, cb:false}, load(K_SET,{}));
 let stats = Object.assign({played:0,won:0,streak:0,max:0,dist:[0,0,0,0,0,0],lastDay:-1}, load(K_STATS,{}));
-let state = load(K_STATE,null);
-if(!state || state.day!==DAY) state = {day:DAY, guesses:[], status:'playing'};
+// Per-day progress for every puzzle (daily + archive): { "<day>": {day, guesses, status} }
+let archive = load(K_ARCH,{});
+if(!archive || typeof archive!=='object' || Array.isArray(archive)) archive = {};
+let dailyState = load(K_STATE,null);
+// Keep an earlier day's unfinished/finished board from before the archive existed
+if(dailyState && Number.isInteger(dailyState.day) && dailyState.day<TODAY && dailyState.guesses && dailyState.guesses.length && !archive[dailyState.day]){ archive[dailyState.day]=dailyState; save(K_ARCH,archive); }
+if(!dailyState || dailyState.day!==TODAY) dailyState = archive[TODAY] && archive[TODAY].day===TODAY ? archive[TODAY] : {day:TODAY, guesses:[], status:'playing'};
+let state = dailyState;
+function persist(){
+  if(!isArchive) save(K_STATE,state);
+  archive[state.day]=state; save(K_ARCH,archive);
+}
 
 let current = '';          // letters typed on the active row
 let busy = false;          // true while a row is flipping
@@ -271,7 +318,7 @@ function submit(){
   const ev=evaluate(guess, ANSWER);
   const won = ev.every(x=>x==='correct');
   if(won) state.status='won'; else if(state.guesses.length>=ROWS) state.status='lost';
-  save(K_STATE,state);
+  persist();
   busy=true;
   revealRow(r, guess, ev, ()=>{
     busy=false;
@@ -302,6 +349,14 @@ function paintBoardFromState(){
 // ── FINISH / STATS / LEADERBOARD ─────────────────────────────────────────────
 const WIN_MSG=['LEGENDARY','INCREDIBLE','EXCELLENT','NICE','SOLID','PHEW'];
 function finish(won){
+  const myDay=DAY;
+  const delayedStats=(ms)=>setTimeout(()=>{ if(DAY===myDay) openStats(); }, ms);
+  if(isArchive){
+    // Practice only: no stats, no streak, no leaderboard
+    toast(won ? WIN_MSG[state.guesses.length-1] : ANSWER.toUpperCase(), won?1800:3000);
+    delayedStats(won?2000:2400);
+    return;
+  }
   // Only count a finished puzzle once per day
   if(stats.lastDay!==DAY){
     stats.played++;
@@ -317,7 +372,7 @@ function finish(won){
     }
   }
   toast(won ? WIN_MSG[state.guesses.length-1] : ANSWER.toUpperCase(), won?1800:3000);
-  setTimeout(()=>openStats(), won?2000:2400);
+  delayedStats(won?2000:2400);
 }
 function winPct(){ return stats.played? Math.round(100*stats.won/stats.played):0; }
 function openStats(){
@@ -330,17 +385,25 @@ function openStats(){
   stats.dist.forEach((n,i)=>{
     const row=document.createElement('div'); row.className='bar-row';
     const lbl=document.createElement('span'); lbl.textContent=i+1;
-    const bar=document.createElement('div'); bar.className='bar'+((state.status==='won'&&state.guesses.length===i+1)?' hl':''); bar.style.width=Math.max(7, Math.round(100*n/mx))+'%'; bar.textContent=n;
+    const bar=document.createElement('div'); bar.className='bar'+((!isArchive&&state.status==='won'&&state.guesses.length===i+1)?' hl':''); bar.style.width=Math.max(7, Math.round(100*n/mx))+'%'; bar.textContent=n;
     row.appendChild(lbl); row.appendChild(bar); dist.appendChild(row);
   });
   const ar=document.getElementById('answer-reveal');
   if(state.status!=='playing'){
     ar.style.display='block';
-    ar.innerHTML = state.status==='won' ? `Solved in ${state.guesses.length}/6` : 'The word was ';
+    const pre = isArchive ? `Puzzle #${PUZZLE_NO} · ` : '';
+    ar.innerHTML = state.status==='won' ? `${pre}Solved in ${state.guesses.length}/6` : `${pre}The word was `;
     if(state.status==='lost'){ const b=document.createElement('b'); b.textContent=ANSWER.toUpperCase(); ar.appendChild(b); }
     document.getElementById('next-row').style.display='flex';
-    tickClock();
+    document.getElementById('clock-box').style.display = isArchive ? 'none' : 'block';
+    if(!isArchive) tickClock(); else clearInterval(clockTimer);
   } else { ar.style.display='none'; document.getElementById('next-row').style.display='none'; }
+  // archive shortcuts: after any finished puzzle, or whenever an archive puzzle is on the board
+  document.getElementById('arch-row').style.display = (state.status!=='playing' || isArchive) ? 'flex' : 'none';
+  document.getElementById('arch-today2').style.display = isArchive ? '' : 'none';
+  const note=document.getElementById('lb-note');
+  if(isArchive){ note.textContent='Archive puzzle — practice only, not counted in your stats or the leaderboard'; note.style.display='block'; }
+  else if(!/sent to the arcade/.test(note.textContent)) note.style.display='none';
   show('stats-overlay');
 }
 let clockTimer=null;
@@ -356,7 +419,7 @@ function shareText(){
   const sq = settings.cb ? {correct:'🟧',present:'🟦',absent:'⬛'} : {correct:'🟩',present:'🟨',absent:'⬛'};
   const lines = state.guesses.map(g=>evaluate(g,ANSWER).map(x=>sq[x]).join(''));
   const n = state.status==='won' ? state.guesses.length : 'X';
-  return `GONZO'S WORD SCRAMBLE #${PUZZLE_NO} ${n}/6${settings.hard?'*':''}\n\n${lines.join('\n')}\n\ngonzogonzo.com`;
+  return `GONZO'S WORD SCRAMBLE #${PUZZLE_NO}${isArchive?' (archive)':''} ${n}/6${settings.hard?'*':''}\n\n${lines.join('\n')}\n\ngonzogonzo.com`;
 }
 async function share(){
   const text=shareText();
@@ -381,6 +444,49 @@ document.getElementById('stats-btn').addEventListener('click',openStats);
 document.getElementById('settings-btn').addEventListener('click',()=>{ syncToggles(); show('settings-overlay'); });
 document.getElementById('share-btn').addEventListener('click',share);
 
+// ── ARCHIVE ──────────────────────────────────────────────────────────────────
+function setLabel(){
+  const el=document.getElementById('puzzle-label');
+  el.textContent = (isArchive ? `ARCHIVE #${PUZZLE_NO} · ${dateFor(DAY).toLocaleDateString(undefined,{month:'short',day:'numeric'}).toUpperCase()}` : `DAILY PUZZLE #${PUZZLE_NO}`) + (settings.hard?' · HARD':'');
+  document.getElementById('today-btn').style.display = isArchive ? 'inline-block' : 'none';
+}
+function loadPuzzle(day){
+  if(busy) return;
+  if(!Number.isInteger(day) || day<0 || day>TODAY) return;
+  DAY=day; PUZZLE_NO=day+1; ANSWER=answerFor(day); isArchive = day<TODAY;
+  if(!isArchive) state=dailyState;
+  else { const a=archive[day]; state = (a && Array.isArray(a.guesses)) ? a : {day, guesses:[], status:'playing'}; state.day=day; }
+  current='';
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){ const t=tiles[r][c]; t.textContent=''; t.className='tile'; }
+  document.querySelectorAll('.overlay.show').forEach(o=>o.classList.remove('show'));
+  document.getElementById('toast').classList.remove('show');
+  paintBoardFromState(); setLabel(); syncToggles();
+  if(state.status!=='playing') setTimeout(()=>{ if(DAY===day) openStats(); }, 500);
+  window.scrollTo(0,0);
+}
+function openArchive(){
+  const grid=document.getElementById('arch-grid'); grid.innerHTML='';
+  if(TODAY<1){
+    const p=document.createElement('p'); p.className='arch-note'; p.style.gridColumn='1/-1'; p.textContent='No past puzzles yet — come back tomorrow!'; grid.appendChild(p);
+  }
+  for(let d=TODAY-1; d>=0; d--){
+    const a=archive[d]; const st = a && a.guesses && a.guesses.length ? a.status : 'new';
+    const b=document.createElement('button'); b.type='button';
+    b.className='arch-item'+(st==='won'?' won':st==='lost'?' lost':st==='playing'?' playing':'')+((isArchive&&DAY===d)?' cur':'');
+    const res = st==='won' ? `${a.guesses.length}/6` : st==='lost' ? 'X/6' : st==='playing' ? `${a.guesses.length}/6…` : '';
+    b.innerHTML = `#${d+1}<small>${dateFor(d).toLocaleDateString(undefined,{month:'short',day:'numeric'})}${res?' · '+res:''}<\/small>`;
+    b.addEventListener('click',()=>loadPuzzle(d));
+    grid.appendChild(b);
+  }
+  show('archive-overlay');
+}
+document.getElementById('archive-btn').addEventListener('click',openArchive);
+document.getElementById('arch-open2').addEventListener('click',()=>{ hide('stats-overlay'); openArchive(); });
+document.getElementById('arch-today2').addEventListener('click',()=>loadPuzzle(TODAY));
+document.getElementById('today-btn').addEventListener('click',()=>loadPuzzle(TODAY));
+// If the page sat open past midnight, pick up the new daily puzzle
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden && !busy && localDayNumber()!==TODAY) location.reload(); });
+
 const hardT=document.getElementById('hard-toggle'), cbT=document.getElementById('cb-toggle');
 function syncToggles(){
   hardT.classList.toggle('on',settings.hard); cbT.classList.toggle('on',settings.cb);
@@ -389,14 +495,14 @@ function syncToggles(){
 }
 hardT.addEventListener('click',()=>{
   if(!settings.hard && state.guesses.length>0 && state.status==='playing'){ toast('Hard mode can only be enabled at the start'); return; }
-  settings.hard=!settings.hard; save(K_SET,settings); syncToggles(); toast(settings.hard?'Hard mode on':'Hard mode off');
+  settings.hard=!settings.hard; save(K_SET,settings); setLabel(); syncToggles(); toast(settings.hard?'Hard mode on':'Hard mode off');
 });
 cbT.addEventListener('click',()=>{ settings.cb=!settings.cb; save(K_SET,settings); applyCb(); syncToggles(); });
 function applyCb(){ document.body.classList.toggle('cb', settings.cb); }
 
 // ── INIT ─────────────────────────────────────────────────────────────────────
 applyCb();
-document.getElementById('puzzle-label').textContent = `DAILY PUZZLE #${PUZZLE_NO}` + (settings.hard?' · HARD':'');
+setLabel();
 paintBoardFromState();
 if(state.status!=='playing'){ setTimeout(openStats, 600); }
 else if(stats.played===0 && state.guesses.length===0){ show('help-overlay'); } // first visit: open immediately, never on a timer that could race the player's first taps
