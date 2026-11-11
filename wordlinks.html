@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+  <title>Word Links — Arcade</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+  <style>
+    :root{
+      --bg:#07070f;--panel:#0b0b1a;--border:#1e1e3a;--text:#e8e8ff;--muted:#6060a0;
+      --cyan:#00f5d4;--magenta:#f72585;--yellow:#f9c74f;--purple:#9b5de5;
+      --correct:#06d6a0;--present:#f9c74f;--absent:#2a2a44;--tile:#16162c;
+      --g0:#f9c74f;--g1:#06d6a0;--g2:#4cc9f0;--g3:#c77dff;
+    }
+    body.cb{ --g0:#ffe066; --g1:#f5793a; --g2:#85c0f9; --g3:#e0aaff; }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html,body{background:var(--bg);color:var(--text);font-family:'Nunito',sans-serif;min-height:100%;-webkit-tap-highlight-color:transparent}
+    body{display:flex;flex-direction:column;align-items:center;overflow-x:hidden}
+    body::before{content:'';position:fixed;inset:0;pointer-events:none;background-image:linear-gradient(rgba(155,93,229,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(155,93,229,.03) 1px,transparent 1px);background-size:36px 36px}
+    button{font-family:'Nunito',sans-serif;touch-action:manipulation}
+    .page{position:relative;z-index:1;width:100%;max-width:560px;padding:22px 14px 28px;display:flex;flex-direction:column;align-items:center;gap:12px}
+    .nav{width:100%;display:flex;align-items:center;justify-content:space-between}
+    .back-btn{font-size:13px;font-weight:700;color:var(--muted);text-decoration:none;letter-spacing:1.5px}
+    .back-btn::before{content:'◄ '}
+    .back-btn:hover{color:var(--cyan)}
+    h1{font-weight:900;font-size:clamp(26px,6vw,34px);letter-spacing:5px;color:var(--purple);text-shadow:0 0 16px rgba(155,93,229,.55);text-align:center}
+    .sub{font-size:11px;font-weight:700;letter-spacing:3px;color:var(--muted);text-align:center}
+    .lead{font-size:14px;font-weight:600;color:#c8c8e8}
+    .toolbar{display:flex;gap:8px}
+    .icon-btn{width:34px;height:34px;border:1px solid var(--border);background:var(--panel);color:var(--text);border-radius:10px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:border-color .15s,color .15s}
+    .icon-btn:hover{border-color:var(--purple);color:var(--purple)}
+    .btn{font-weight:800;font-size:15px;letter-spacing:1px;padding:13px 22px;border:none;border-radius:12px;cursor:pointer;background:var(--correct);color:#05120f;box-shadow:0 0 16px rgba(6,214,160,.35)}
+    .btn:hover{box-shadow:0 0 28px rgba(6,214,160,.55)}
+    .btn.ghost{background:transparent;color:var(--text);border:1px solid var(--border);box-shadow:none}
+    .btn.small{font-size:12px;padding:8px 14px;border-radius:10px}
+    #today-btn{display:none}
+
+    /* ── Board ── */
+    .board{width:100%;display:flex;flex-direction:column;gap:8px}
+    .solved{border-radius:12px;padding:12px 10px;text-align:center;color:#0b0b1a;animation:pop .35s ease}
+    .solved .cat{font-weight:900;font-size:clamp(14px,4vw,17px);letter-spacing:1.5px;text-transform:uppercase}
+    .solved .ws{font-weight:700;font-size:clamp(12px,3.6vw,15px);letter-spacing:.5px;margin-top:2px;text-transform:uppercase}
+    .solved.g0{background:var(--g0);box-shadow:0 0 18px rgba(249,199,79,.35)}
+    .solved.g1{background:var(--g1);box-shadow:0 0 18px rgba(6,214,160,.35)}
+    .solved.g2{background:var(--g2);box-shadow:0 0 18px rgba(76,201,240,.35)}
+    .solved.g3{background:var(--g3);box-shadow:0 0 18px rgba(199,125,255,.35)}
+    .solved.revealed{opacity:.8}
+    @keyframes pop{0%{transform:scale(.9);opacity:.3}60%{transform:scale(1.03)}100%{transform:scale(1);opacity:1}}
+    .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+    .tile{position:relative;aspect-ratio:1.25/1;min-height:58px;border:1.5px solid var(--border);background:var(--tile);color:var(--text);border-radius:12px;font-weight:900;font-size:16px;letter-spacing:.3px;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:4px;line-height:1.1;user-select:none;-webkit-user-select:none;transition:background .12s,border-color .12s,transform .08s;overflow:hidden;white-space:nowrap}
+    .tile:active{transform:scale(.95)}
+    .tile span{display:inline-block;max-width:100%;text-align:center;-webkit-hyphens:manual;hyphens:manual;overflow-wrap:normal}
+    .tile.wrap{white-space:normal}
+    @media(max-width:380px){.page{padding-left:10px;padding-right:10px}.grid,.board{gap:6px}.tile{border-radius:10px;padding:3px}.ctl{padding:0 14px;font-size:14px}.controls{gap:8px}}
+    .tile.sel{background:var(--purple);border-color:var(--purple);color:#fff;box-shadow:0 0 14px rgba(155,93,229,.5)}
+    .tile.jump{animation:jump .32s ease}
+    @keyframes jump{40%{transform:translateY(-10px)}100%{transform:translateY(0)}}
+    .grid.shake .tile.sel{animation:shake .45s}
+    @keyframes shake{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(4px)}30%,50%,70%{transform:translateX(-6px)}40%,60%{transform:translateX(6px)}}
+    .grid.fade .tile{transition:opacity .18s;opacity:0}
+
+    .mistakes{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:700;color:#c8c8e8;margin-top:2px}
+    .dots{display:flex;gap:7px}
+    .dots i{width:13px;height:13px;border-radius:50%;background:var(--muted);transition:transform .3s,background .3s}
+    .dots i.gone{background:transparent;border:2px solid var(--border);transform:scale(.7)}
+    .controls{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+    .ctl{height:46px;padding:0 20px;border-radius:23px;border:1.5px solid var(--border);background:var(--panel);color:var(--text);font-weight:800;font-size:15px;cursor:pointer;transition:border-color .15s,opacity .15s}
+    .ctl:hover:not(:disabled){border-color:var(--purple)}
+    .ctl:disabled{opacity:.35;cursor:default}
+    .ctl.go{border-color:var(--correct);color:var(--correct)}
+    .ctl.go:disabled{border-color:var(--border);color:var(--text)}
+    .after{display:none;gap:10px;justify-content:center;flex-wrap:wrap}
+
+    /* ── Toast ── */
+    #toast{position:fixed;top:72px;left:50%;transform:translateX(-50%);background:#e8e8ff;color:#07070f;font-weight:700;font-size:14px;letter-spacing:.3px;padding:12px 20px;border-radius:10px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:300;white-space:nowrap}
+    #toast.show{opacity:1}
+
+    /* ── Modals ── */
+    .overlay{position:fixed;inset:0;background:rgba(7,7,15,.9);z-index:200;display:flex;align-items:center;justify-content:center;padding:18px;opacity:0;pointer-events:none;transition:opacity .2s}
+    .overlay.show{opacity:1;pointer-events:auto}
+    .modal{background:var(--panel);border:1.5px solid var(--purple);box-shadow:0 0 30px rgba(155,93,229,.3);border-radius:18px;padding:22px 20px;width:100%;max-width:420px;max-height:92vh;overflow-y:auto;position:relative}
+    .modal h2{font-weight:900;font-size:19px;letter-spacing:3px;color:var(--purple);text-align:center;margin-bottom:14px}
+    .close{position:absolute;top:10px;right:12px;background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer}
+    .close:hover{color:var(--text)}
+    .result-title{text-align:center;font-weight:900;font-size:22px;letter-spacing:2px;margin-bottom:10px}
+    .emoji{text-align:center;font-size:24px;line-height:1.25;letter-spacing:2px;margin:6px 0 14px;white-space:pre-line}
+    .stats-row{display:flex;justify-content:space-around;margin:6px 0 10px}
+    .stat{text-align:center}
+    .stat b{display:block;font-weight:900;font-size:26px;color:var(--cyan)}
+    .stat span{font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase}
+    .next{display:flex;justify-content:space-between;align-items:center;margin-top:16px;padding-top:14px;border-top:1px solid var(--border);gap:12px}
+    .next .lbl{font-size:11px;font-weight:700;letter-spacing:2px;color:var(--muted);text-transform:uppercase}
+    .next .clock{font-weight:900;font-size:24px;letter-spacing:1px}
+    .lb-note{font-size:11px;color:var(--muted);text-align:center;margin-top:12px;letter-spacing:.5px;line-height:1.5}
+    .note{font-size:12px;line-height:1.6;color:#c8c8e8;text-align:center}
+    .btn-row{display:flex;gap:10px;justify-content:center;margin-top:14px;flex-wrap:wrap}
+    .arch-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+    .arch-item{border:1.5px solid var(--border);background:transparent;color:var(--text);border-radius:10px;padding:8px 2px;cursor:pointer;font-weight:800;font-size:14px;line-height:1.3}
+    .arch-item small{display:block;font-size:10px;font-weight:700;color:var(--muted)}
+    .arch-item:hover{border-color:var(--purple)}
+    .arch-item.won{border-color:var(--correct)}
+    .arch-item.lost{border-color:var(--magenta)}
+    .arch-item.playing{border-color:var(--present)}
+    .arch-item.cur{background:#1a1a30}
+    .arch-legend{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);margin-top:12px}
+    .arch-legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px;vertical-align:-1px;border:2px solid}
+    .setting{display:flex;justify-content:space-between;align-items:center;padding:14px 0;gap:14px}
+    .setting .t{font-weight:700;font-size:14px}
+    .setting .d{font-size:11px;color:var(--muted);margin-top:3px;line-height:1.5}
+    .toggle{width:46px;height:26px;border-radius:13px;background:#2a2a44;border:none;position:relative;cursor:pointer;flex-shrink:0;transition:background .2s}
+    .toggle::after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#9a9ac0;transition:left .2s,background .2s}
+    .toggle.on{background:var(--correct)}
+    .toggle.on::after{left:23px;background:#05120f}
+    .help p,.help li{font-size:13px;line-height:1.6;color:#c8c8e8;margin:6px 0}
+    .help ul{padding-left:18px}
+    .help b{color:var(--text)}
+    .swatches{display:flex;flex-direction:column;gap:5px;margin:8px 0}
+    .swatches div{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:700;color:#c8c8e8}
+    .swatches i{width:22px;height:16px;border-radius:5px}
+  </style>
+</head>
+<body>
+<div class="page">
+  <nav class="nav">
+    <a class="back-btn" href="index.html">ARCADE</a>
+    <div class="toolbar">
+      <button class="icon-btn" id="help-btn" title="How to play" aria-label="How to play">?</button>
+      <button class="icon-btn" id="archive-btn" title="Past puzzles" aria-label="Past puzzles">&#128197;</button>
+      <button class="icon-btn" id="stats-btn" title="Statistics" aria-label="Statistics">▦</button>
+      <button class="icon-btn" id="settings-btn" title="Settings" aria-label="Settings">⚙</button>
+    </div>
+  </nav>
+  <h1>WORD LINKS</h1>
+  <div class="sub" id="puzzle-label">DAILY PUZZLE</div>
+  <button class="btn ghost small" id="today-btn">◄ BACK TO TODAY'S PUZZLE</button>
+  <div class="lead" id="lead">Create four groups of four!</div>
+
+  <div class="board">
+    <div id="solved-area" style="display:flex;flex-direction:column;gap:8px"></div>
+    <div class="grid" id="grid"></div>
+  </div>
+
+  <div class="mistakes" id="mistakes-row">Mistakes remaining: <span class="dots" id="dots"><i></i><i></i><i></i><i></i></span></div>
+  <div class="controls" id="controls">
+    <button class="ctl" id="shuffle-btn">Shuffle</button>
+    <button class="ctl" id="deselect-btn" disabled>Deselect all</button>
+    <button class="ctl go" id="submit-btn" disabled>Submit</button>
+  </div>
+  <div class="after" id="after">
+    <button class="btn small" id="results-btn">VIEW RESULTS</button>
+    <button class="btn ghost small" id="after-arch">PAST PUZZLES</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- STATS / RESULTS -->
+<div class="overlay" id="stats-overlay">
+  <div class="modal">
+    <button class="close" data-close="stats-overlay">×</button>
+    <h2>STATISTICS</h2>
+    <div id="result-box" style="display:none">
+      <div class="result-title" id="result-title"></div>
+      <div class="emoji" id="emoji"></div>
+    </div>
+    <div class="stats-row">
+      <div class="stat"><b id="s-played">0</b><span>Played</span></div>
+      <div class="stat"><b id="s-win">0</b><span>Win %</span></div>
+      <div class="stat"><b id="s-streak">0</b><span>Streak</span></div>
+      <div class="stat"><b id="s-max">0</b><span>Max</span></div>
+      <div class="stat"><b id="s-perfect">0</b><span>Perfect</span></div>
+    </div>
+    <div class="next" id="next-row" style="display:none">
+      <div id="clock-box"><div class="lbl">Next puzzle</div><div class="clock" id="clock">00:00:00</div></div>
+      <button class="btn" id="share-btn">⇪ SHARE</button>
+    </div>
+    <div class="btn-row" id="arch-row" style="display:none">
+      <button class="btn ghost small" id="arch-open2">PAST PUZZLES</button>
+      <button class="btn small" id="arch-today2">TODAY'S PUZZLE</button>
+    </div>
+    <div class="lb-note" id="lb-note" style="display:none"></div>
+  </div>
+</div>
+
+<!-- ARCHIVE -->
+<div class="overlay" id="archive-overlay">
+  <div class="modal">
+    <button class="close" data-close="archive-overlay">×</button>
+    <h2>PAST PUZZLES</h2>
+    <p class="note">Missed a day? Play any earlier puzzle. Archive games are practice only &mdash; they don't change your streak, stats or leaderboard score.</p>
+    <div class="arch-grid" id="arch-grid"></div>
+    <div class="arch-legend"><span><i style="border-color:var(--correct)"></i>SOLVED</span><span><i style="border-color:var(--magenta)"></i>MISSED</span><span><i style="border-color:var(--present)"></i>STARTED</span></div>
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div class="overlay" id="settings-overlay">
+  <div class="modal">
+    <button class="close" data-close="settings-overlay">×</button>
+    <h2>SETTINGS</h2>
+    <div class="setting">
+      <div><div class="t">High-contrast mode</div><div class="d">Group colours that are easier to tell apart for colour-blind players.</div></div>
+      <button class="toggle" id="cb-toggle" aria-label="High contrast mode"></button>
+    </div>
+  </div>
+</div>
+
+<!-- HELP -->
+<div class="overlay" id="help-overlay">
+  <div class="modal help">
+    <button class="close" data-close="help-overlay">×</button>
+    <h2>HOW TO PLAY</h2>
+    <p>Find groups of four words that share something in common.</p>
+    <ul>
+      <li>Tap four words, then press <b>Submit</b> to check your guess.</li>
+      <li>Find all four groups without making <b>4 mistakes</b>.</li>
+      <li>If you're one word off, you'll be told you're <b>one away</b>.</li>
+    </ul>
+    <p>Each puzzle has exactly one solution. Watch out for words that seem to fit more than one group!</p>
+    <p>Groups get trickier by colour:</p>
+    <div class="swatches">
+      <div><i style="background:var(--g0)"></i>Straightforward</div>
+      <div><i style="background:var(--g1)"></i>A bit harder</div>
+      <div><i style="background:var(--g2)"></i>Tricky</div>
+      <div><i style="background:var(--g3)"></i>Wordplay &amp; lateral thinking</div>
+    </div>
+    <p>Categories can be things like <b>___ FISH</b> (words that come before "fish") or <b>Hidden animals</b> (a word hidden inside each word). A new puzzle arrives every midnight.</p>
+  </div>
+</div>
+
+<script src="firebase-config.js"></script>
+<script src="leaderboard.js"></script>
+<script>
+if(typeof LB==='undefined') window.LB={submit:(_g,_s,_l,cb)=>{if(cb)cb();}};
+
+// ── PUZZLES (original, embedded) ────────────────────────────────────────────
+// Each puzzle: 4 groups ordered easiest → trickiest: [category, [w1,w2,w3,w4]]
+const PUZZLES = [[["Breakfast foods",["PANCAKE","WAFFLE","OMELET","BAGEL"]],["Things with keys",["PIANO","LOCK","MAP","TYPEWRITER"]],["Golf scores",["EAGLE","BIRDIE","PAR","BOGEY"]],["Hidden animals",["BATHTUB","CATALOG","DOGMA","RATIO"]]],[["Herbs",["BASIL","DILL","THYME","OREGANO"]],["Shades of green",["LIME","OLIVE","JADE","MINT"]],["Flightless birds",["KIWI","EMU","OSTRICH","PENGUIN"]],["___stick",["LIP","DRUM","CHOP","JOY"]]],[["Planets",["EARTH","JUPITER","URANUS","NEPTUNE"]],["Wild cats",["LYNX","PUMA","OCELOT","COUGAR"]],["Chemical elements",["MERCURY","IRON","GOLD","TIN"]],["Car brands",["SATURN","JAGUAR","MINI","DODGE"]]],[["Fireplace things",["TONGS","GRATE","EMBER","SOOT"]],["Card games",["POKER","RUMMY","SNAP","HEARTS"]],["Dental work",["BRIDGE","CROWN","FILLING","BRACES"]],["___ point",["MATCH","BREAKING","BOILING","VANISHING"]]],[["Coffee drinks",["LATTE","MOCHA","ESPRESSO","CAPPUCCINO"]],["Snakes",["COBRA","MAMBA","VIPER","ADDER"]],["Programming languages",["PYTHON","RUBY","JAVA","SWIFT"]],["___ bean",["JELLY","KIDNEY","STRING","BAKED"]]],[["Dog breeds",["POODLE","BEAGLE","PUG","DALMATIAN"]],["Flowers",["ROSE","DAISY","LILY","ORCHID"]],["Kinds of shorts",["BOXER","CARGO","BERMUDA","BIKE"]],["Ends in a body part",["SPEAR","WORSHIP","FIREARM","TULIP"]]],[["Kitchen utensils",["WHISK","LADLE","SPATULA","TONGS"]],["Things with strings",["KITE","PUPPET","YO-YO","HARP"]],["Orchestra percussion",["CYMBAL","TRIANGLE","GONG","TIMPANI"]],["___ party",["TEA","BLOCK","HOUSE","SEARCH"]]],[["Shades of red",["CRIMSON","SCARLET","MAROON","CHERRY"]],["Gemstones",["RUBY","OPAL","TOPAZ","PEARL"]],["Hair colours",["AUBURN","BLONDE","BRUNETTE","SILVER"]],["___bread",["GINGER","SHORT","CORN","FLAT"]]],[["Bodies of water",["LAKE","POND","LAGOON","CREEK"]],["Fish",["BASS","TROUT","PIKE","SALMON"]],["Complain",["CARP","MOAN","GRIPE","WHINE"]],["___ bank",["PIGGY","BLOOD","FOOD","RIVER"]]],[["Chess pieces",["ROOK","BISHOP","KNIGHT","PAWN"]],["Playing card ranks",["KING","QUEEN","JACK","ACE"]],["Radio lingo",["ROGER","MAYDAY","OVER","COPY"]],["___dom",["FREE","BORE","STAR","FAN"]]],[["Pasta shapes",["PENNE","FUSILLI","LINGUINE","ORZO"]],["Breads",["NAAN","PITA","RYE","BRIOCHE"]],["Cheeses",["BRIE","FETA","GOUDA","CHEDDAR"]],["Hidden numbers",["OFTEN","CANINE","FREIGHT","STONE"]]],[["Sea creatures",["WHALE","DOLPHIN","SQUID","OCTOPUS"]],["Gymnastics apparatus",["BEAM","RINGS","BARS","VAULT"]],["Banking",["TELLER","LOAN","DEPOSIT","SAFE"]],["___ tank",["SHARK","THINK","GAS","SEPTIC"]]],[["Rainbow colours",["RED","YELLOW","GREEN","INDIGO"]],["Citrus fruits",["LEMON","LIME","ORANGE","TANGERINE"]],["Flowers",["VIOLET","POPPY","DAISY","TULIP"]],["Parts of the eye",["PUPIL","CORNEA","RETINA","IRIS"]]],[["Footwear",["BOOT","SANDAL","SNEAKER","LOAFER"]],["Lazy people",["SLACKER","IDLER","LAYABOUT","BUM"]],["Poker moves",["BLUFF","RAISE","FOLD","CALL"]],["___foot",["BARE","BIG","CLUB","TENDER"]]],[["Farm animals",["COW","PIG","GOAT","SHEEP"]],["Chinese zodiac",["RAT","DRAGON","MONKEY","TIGER"]],["Male animals",["RAM","BULL","STAG","ROOSTER"]],["___fish",["CAT","SWORD","STAR","JELLY"]]],[["Golf words",["TEE","IRON","PUTTER","CADDIE"]],["Gift wrapping",["BOW","RIBBON","TAG","CARD"]],["Stand-ins",["PROXY","UNDERSTUDY","RESERVE","BACKUP"]],["Sandwiches",["CLUB","SUB","WRAP","PANINI"]]],[["Car gears",["PARK","REVERSE","NEUTRAL","FIRST"]],["Keyboard keys",["SHIFT","ENTER","DELETE","TAB"]],["Golf shots",["DRIVE","CHIP","PUTT","SLICE"]],["___room",["ESCAPE","BALL","MUSH","CHAT"]]],[["Baby animals",["FOAL","CUB","KITTEN","PUPPY"]],["Parts of the leg",["THIGH","SHIN","KNEE","CALF"]],["Board games",["CHESS","CHECKERS","RISK","CLUE"]],["Ends in \"pet\"",["CARPET","TRUMPET","PUPPET","LIMPET"]]],[["Breakfast drinks",["COFFEE","JUICE","MILK","COCOA"]],["Birds",["ROBIN","WREN","FINCH","CROW"]],["Parts of the face",["NOSE","CHIN","CHEEK","BROW"]],["Sound like letters",["TEA","SEA","JAY","EYE"]]],[["Music genres",["PUNK","FOLK","BLUES","REGGAE"]],["Dances",["TANGO","WALTZ","SALSA","POLKA"]],["NBA teams",["JAZZ","HEAT","MAGIC","SUNS"]],["___ star",["ROCK","MOVIE","SHOOTING","NORTH"]]],[["Percussion",["DRUM","CYMBAL","GONG","TAMBOURINE"]],["Shapes",["CIRCLE","HEXAGON","TRIANGLE","OVAL"]],["___ office",["BOX","POST","HOME","FRONT"]],["Town ___",["HALL","CRIER","HOUSE","SQUARE"]]],[["Pizza toppings",["PEPPERONI","MUSHROOM","OLIVE","SAUSAGE"]],["Cocktails",["MARTINI","MOJITO","DAIQUIRI","MARGARITA"]],["Things with layers",["CAKE","LASAGNA","PARFAIT","ONION"]],["Hidden meats",["SHAMPOO","CLAMBER","REVEAL","CRIBS"]]],[["Trees",["OAK","BIRCH","WILLOW","CEDAR"]],["Wading birds",["HERON","STORK","EGRET","CRANE"]],["Canadian symbols",["MAPLE","BEAVER","LOON","HOCKEY"]],["Hidden trees",["SPINE","HELMET","CASHEW","SOAKED"]]],[["Halloween monsters",["GHOST","SKELETON","ZOMBIE","VAMPIRE"]],["Pies",["APPLE","CHERRY","PECAN","PUMPKIN"]],["___writer",["SPEECH","TYPE","SCREEN","SONG"]],["___craft",["AIR","SPACE","HOVER","WITCH"]]],[["Car parts",["ENGINE","BUMPER","MUFFLER","HOOD"]],["Dog sounds",["WOOF","YAP","GROWL","HOWL"]],["Parts of a tree",["TRUNK","BARK","ROOT","BRANCH"]],["Parts of a shirt",["COLLAR","CUFF","SLEEVE","POCKET"]]],[["Desserts",["BROWNIE","CUPCAKE","ECLAIR","SUNDAE"]],["Nationalities",["SWISS","FRENCH","GREEK","DUTCH"]],["Pastries",["CROISSANT","DANISH","SCONE","MUFFIN"]],["Browser terms",["CACHE","COOKIE","BOOKMARK","TAB"]]],[["Space objects",["COMET","ASTEROID","GALAXY","NEBULA"]],["Valentine's Day",["CUPID","HEART","ROSE","CARD"]],["Santa's reindeer",["DASHER","DANCER","VIXEN","PRANCER"]],["Salad greens",["KALE","SPINACH","CHARD","ROCKET"]]],[["Jobs",["NURSE","CHEF","FARMER","BAKER"]],["Sharks",["TIGER","HAMMERHEAD","MAKO","BULL"]],["TV terms",["EPISODE","SEASON","FINALE","PILOT"]],["Starts with a drink",["TEACHER","PORTRAIT","GINGER","RUMBLE"]]],[["Clothing",["SHIRT","PANTS","JACKET","SCARF"]],["Metals",["IRON","COPPER","ZINC","NICKEL"]],["Coins",["PENNY","DIME","QUARTER","DOLLAR"]],["Eat quickly",["WOLF","GOBBLE","DEVOUR","BOLT"]]],[["Kitchen appliances",["TOASTER","BLENDER","OVEN","MICROWAVE"]],["Fish",["COD","TUNA","HALIBUT","PERCH"]],["Ways to catch something",["NET","CAGE","WEB","LURE"]],["___ drum",["BASS","SNARE","EAR","KETTLE"]]],[["Nocturnal animals",["OWL","MOTH","RACCOON","HEDGEHOG"]],["Loud noise",["DIN","CLAMOR","UPROAR","RUCKUS"]],["Sports gear",["BAT","RACKET","PUCK","PADDLE"]],["Hidden vehicles",["CARPET","BUSHEL","VANILLA","CABIN"]]],[["Winter gear",["SLED","SKI","SNOWBOARD","SKATE"]],["In your mouth",["LIP","GUM","TOOTH","PALATE"]],["Fish",["EEL","SOLE","HADDOCK","MACKEREL"]],["Parts of a shoe",["LACE","HEEL","TONGUE","EYELET"]]],[["Units of length",["INCH","FOOT","MILE","METER"]],["Card game terms",["SUIT","TRUMP","DEAL","SHUFFLE"]],["Outdoor spaces",["YARD","PATIO","DECK","PORCH"]],["Move slowly",["CRAWL","CREEP","DAWDLE","LAG"]]],[["Burger toppings",["LETTUCE","TOMATO","PICKLE","ONION"]],["Fruit spreads",["JELLY","MARMALADE","COMPOTE","CHUTNEY"]],["In a tough spot",["JAM","FIX","BIND","HOLE"]],["___cake",["PAN","CUP","SHORT","CHEESE"]]],[["At the beach",["SAND","SUNSCREEN","BUCKET","SHELL"]],["Gestures",["NOD","SHRUG","WINK","WAVE"]],["Ocean movement",["TIDE","CURRENT","SWELL","RIPPLE"]],["Throw a ___",["PARTY","FIT","TANTRUM","PUNCH"]]],[["Organs",["LIVER","LUNG","KIDNEY","SPLEEN"]],["Garden tools",["RAKE","HOE","TROWEL","SHEARS"]],["Baseball",["BASE","MOUND","DUGOUT","BULLPEN"]],["Card suits",["HEART","CLUB","SPADE","DIAMOND"]]],[["Ways to cook",["BAKE","FRY","BOIL","ROAST"]],["Ways to draw",["DOODLE","TRACE","SHADE","ETCH"]],["Baby animals",["KID","JOEY","CYGNET","OWLET"]],["Comedy",["SKETCH","PARODY","IMPROV","SATIRE"]]],[["Capital cities",["PARIS","ROME","CAIRO","OSLO"]],["Shades of blue",["COBALT","AZURE","INDIGO","SAPPHIRE"]],["Beans",["PINTO","KIDNEY","NAVY","LIMA"]],["Black___",["SMITH","MAIL","BOARD","OUT"]]],[["Writing tools",["PEN","PENCIL","MARKER","CRAYON"]],["Animal homes",["STY","DEN","NEST","HIVE"]],["Pool table",["CUE","CHALK","RACK","POCKET"]],["___ knife",["BUTTER","STEAK","JACK","PALETTE"]]],[["Tastes",["SOUR","SALTY","UMAMI","SPICY"]],["Hotel staff",["BELLHOP","CONCIERGE","VALET","PORTER"]],["Beers",["LAGER","STOUT","ALE","BITTER"]],["___corn",["SWEET","POP","PEPPER","CANDY"]]],[["Tiny",["WEE","TEENY","PETITE","MINI"]],["Units of time",["MINUTE","HOUR","DECADE","CENTURY"]],["Support",["SECOND","BACK","ENDORSE","CHAMPION"]],["___glass",["LOOKING","WINE","SPY","MAGNIFYING"]]],[["Wild West",["COWBOY","SALOON","SHERIFF","RANCH"]],["Salad dressings",["CAESAR","ITALIAN","VINAIGRETTE","BALSAMIC"]],["Roman emperors",["NERO","AUGUSTUS","CALIGULA","TRAJAN"]],["___wood",["HOLLY","DRIFT","FIRE","SANDAL"]]],[["Tree nuts",["ALMOND","CASHEW","PECAN","WALNUT"]],["Crazy",["BANANAS","NUTS","CUCKOO","BONKERS"]],["Boring",["BLAND","DULL","TEDIOUS","DRY"]],["Ice cream flavours",["VANILLA","CHOCOLATE","STRAWBERRY","PISTACHIO"]]],[["Hairstyles",["BUN","BRAID","MOHAWK","PONYTAIL"]],["Bakery items",["ROLL","BAGEL","LOAF","CROISSANT"]],["On the water",["FLOAT","DRIFT","SINK","BOB"]],["___ roll",["EGG","SPRING","DRUM","BARREL"]]],[["School subjects",["MATH","SCIENCE","MUSIC","GEOGRAPHY"]],["Martial arts",["KARATE","JUDO","AIKIDO","SUMO"]],["Clear the ___",["AIR","TABLE","THROAT","HISTORY"]],["Hidden \"art\"",["STARTLE","PARTY","CHARTER","SMART"]]],[["In the sky",["CLOUD","RAINBOW","KITE","STAR"]],["Storage spaces",["ATTIC","CLOSET","LOCKER","PANTRY"]],["___light",["SUN","MOON","FLASH","SPOT"]],["___fish",["SWORD","JELLY","GOLD","MONK"]]],[["Mail",["LETTER","ENVELOPE","POSTCARD","PARCEL"]],["Picnic",["BASKET","BLANKET","COOLER","THERMOS"]],["Foot actions",["KICK","STOMP","TRAMPLE","STAMP"]],["___card",["WILD","SCORE","FLASH","BUSINESS"]]],[["Hello",["HI","HEY","HOWDY","ALOHA"]],["Goodbye",["BYE","ADIEU","FAREWELL","CHEERIO"]],["Hawaiian words",["LUAU","LEI","HULA","UKULELE"]],["Horse commands",["WHOA","GIDDYUP","GEE","HAW"]]],[["Toolbox",["WRENCH","PLIERS","SAW","DRILL"]],["Throwing events",["JAVELIN","DISCUS","SHOT","HAMMER"]],["Sayings",["ADAGE","MAXIM","PROVERB","MOTTO"]],["Things with teeth",["COMB","ZIPPER","GEAR","SHARK"]]],[["Pirate gear",["PLANK","TREASURE","EYEPATCH","CUTLASS"]],["Primates",["LEMUR","GIBBON","BABOON","MACAQUE"]],["NATO alphabet",["ALPHA","BRAVO","CHARLIE","DELTA"]],["Copy",["ECHO","MIMIC","APE","PARROT"]]],[["Parts of a ship",["HULL","MAST","KEEL","RUDDER"]],["Archery",["BOW","ARROW","QUIVER","TARGET"]],["Severe",["HARSH","STERN","GRIM","AUSTERE"]],["Quake",["SHAKE","SHIVER","TREMBLE","SHUDDER"]]],[["Dog commands",["SIT","STAY","FETCH","SPEAK"]],["Remain",["TARRY","ABIDE","DWELL","LINGER"]],["Villains",["CAD","ROGUE","SCOUNDREL","HEEL"]],["Hidden \"cad\"",["CADET","ARCADE","DECADE","CASCADE"]]],[["Feeling sad",["BLUE","LOW","DOWN","GLUM"]],["Bird parts",["BEAK","TALON","WING","CREST"]],["Cheeses",["BRIE","FETA","GOUDA","EDAM"]],["Hidden \"owl\"",["BOWLER","HOWL","GROWL","SCOWL"]]],[["Window parts",["PANE","SILL","SASH","BLIND"]],["Camera parts",["LENS","FLASH","SHUTTER","TRIPOD"]],["An instant",["JIFFY","TICK","TRICE","WINK"]],["___case",["BRIEF","SUIT","BOOK","PENCIL"]]],[["Ice cream toppings",["SPRINKLES","NUTS","CHERRY","CARAMEL"]],["Waterfowl",["GOOSE","SWAN","TEAL","MALLARD"]],["Evade",["FUDGE","DODGE","DUCK","SIDESTEP"]],["Magic act",["WAND","HAT","RABBIT","CAPE"]]],[["Exercises",["PUSHUP","SQUAT","PLANK","BURPEE"]],["Lumber",["BOARD","BEAM","LOG","TIMBER"]],["Fencing moves",["PARRY","RIPOSTE","FEINT","LUNGE"]],["Nothing at all",["ZIP","ZILCH","NADA","DIDDLY"]]],[["Months",["APRIL","JUNE","MARCH","MAY"]],["Modal verbs",["CAN","MIGHT","SHALL","MUST"]],["Majestic",["GRAND","NOBLE","REGAL","AUGUST"]],["Protests",["RALLY","STRIKE","BOYCOTT","PICKET"]]],[["Spices",["CUMIN","PAPRIKA","NUTMEG","SAFFRON"]],["Fishing gear",["ROD","REEL","LURE","BAIT"]],["Shades of orange",["AMBER","TANGERINE","APRICOT","CORAL"]],["Soccer terms",["TACKLE","HEADER","PENALTY","OFFSIDE"]]],[["Huge",["MASSIVE","JUMBO","COLOSSAL","MAMMOTH"]],["Internet",["MEME","SPAM","BLOG","EMOJI"]],["Fairy-tale creatures",["TROLL","GIANT","GOBLIN","ELF"]],["___fruit",["DRAGON","PASSION","STAR","GRAPE"]]],[["Golf course",["GREEN","TEE","FAIRWAY","ROUGH"]],["Shelters",["HUT","TENT","SHACK","BUNKER"]],["Inexperienced",["RAW","NAIVE","CALLOW","UNTRIED"]],["___house",["LIGHT","WARE","DOG","OPERA"]]]];
+// Where long words may break onto two lines on narrow screens (shown with a hyphen)
+const BREAKS = {"POSTCARD":"POST|CARD","BRUNETTE":"BRU|NETTE","DAIQUIRI":"DAI|QUIRI","SAPPHIRE":"SAP|PHIRE","SKELETON":"SKEL|ETON","BREAKING":"BREAK|ING","TREASURE":"TREA|SURE","LAYABOUT":"LAY|ABOUT","BALSAMIC":"BAL|SAMIC","BUSINESS":"BUSI|NESS","CALIGULA":"CALI|GULA","EYEPATCH":"EYE|PATCH","CHAMPION":"CHAM|PION","ENVELOPE":"ENVE|LOPE","LINGUINE":"LIN|GUINE","MUSHROOM":"MUSH|ROOM","ASTEROID":"ASTER|OID","PONYTAIL":"PONY|TAIL","PORTRAIT":"POR|TRAIT","CHECKERS":"CHECK|ERS","SIDESTEP":"SIDE|STEP","BOOKMARK":"BOOK|MARK","AUGUSTUS":"AUGUS|TUS","MACKEREL":"MACK|EREL","HEDGEHOG":"HEDGE|HOG","TRIANGLE":"TRI|ANGLE","ESPRESSO":"ES|PRESSO","COLOSSAL":"COLOS|SAL","SHOOTING":"SHOOT|ING","FAREWELL":"FARE|WELL","TANGERINE":"TANGE|RINE","MICROWAVE":"MICRO|WAVE","PEPPERONI":"PEPPE|RONI","VANISHING":"VANISH|ING","MARGARITA":"MARGA|RITA","SPRINKLES":"SPRIN|KLES","DALMATIAN":"DALMA|TIAN","MARMALADE":"MARMA|LADE","CHOCOLATE":"CHOCO|LATE","GEOGRAPHY":"GEO|GRAPHY","CROISSANT":"CROIS|SANT","PISTACHIO":"PISTA|CHIO","SCOUNDREL":"SCOUN|DREL","SUNSCREEN":"SUN|SCREEN","CONCIERGE":"CON|CIERGE","SNOWBOARD":"SNOW|BOARD","TAMBOURINE":"TAMBOU|RINE","HAMMERHEAD":"HAMMER|HEAD","UNDERSTUDY":"UNDER|STUDY","TYPEWRITER":"TYPE|WRITER","MAGNIFYING":"MAGNI|FYING","STRAWBERRY":"STRAW|BERRY","CAPPUCCINO":"CAPPUC|CINO","VINAIGRETTE":"VINAI|GRETTE"};
+
+// ── DAILY PUZZLE ────────────────────────────────────────────────────────────
+const EPOCH = new Date(2026, 9, 1); // puzzle #1 = 1 Oct 2026 (local)
+function localDayNumber(d=new Date()){const t=new Date(d.getFullYear(),d.getMonth(),d.getDate());return Math.round((t-EPOCH)/86400000);}
+function dateFor(day){ return new Date(EPOCH.getFullYear(),EPOCH.getMonth(),EPOCH.getDate()+day); }
+function shortDate(day){ return dateFor(day).toLocaleDateString(undefined,{month:'short',day:'numeric'}); }
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;}}
+function seededShuffle(arr, seed){ const a=arr.slice(), r=mulberry32(seed); for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+// Fixed shuffled order of the puzzle bank, so the sequence isn't the authoring order
+const ORDER = seededShuffle(PUZZLES.map((_,i)=>i), 20261001);
+const TODAY = Math.max(0, localDayNumber());
+function puzzleFor(day){
+  const n=PUZZLES.length, idx=ORDER[((day%n)+n)%n];
+  const groups=PUZZLES[idx].map(([cat,words],level)=>({cat,words,level}));
+  const start=seededShuffle(groups.flatMap(g=>g.words), 7919*day+idx+1);   // same starting layout for everyone
+  const groupOf={}; groups.forEach(g=>g.words.forEach(w=>groupOf[w]=g.level));
+  return {day, idx, groups, start, groupOf};
+}
+
+// ── STATE / STORAGE ─────────────────────────────────────────────────────────
+const K_DAYS='gz_links_days', K_STATS='gz_links_stats', K_SET='gz_links_settings';
+function load(k,def){try{const v=JSON.parse(localStorage.getItem(k));return v??def;}catch{return def;}}
+function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch{}}
+let settings=Object.assign({cb:false}, load(K_SET,{}));
+let stats=Object.assign({played:0,won:0,streak:0,max:0,perfect:0,lastDay:-1}, load(K_STATS,{}));
+let days=load(K_DAYS,{}); if(!days||typeof days!=='object'||Array.isArray(days)) days={};
+
+let P=null, st=null, DAY=TODAY, isArchive=false;
+let selected=[];       // words currently selected
+let busy=false;        // true while an animation is running
+const MAX_MISTAKES=4;
+
+function freshState(p){ return {order:p.start.slice(), solved:[], guesses:[], mistakes:0, status:'playing', revealed:false}; }
+function dayState(day,p){
+  const s=days[day];
+  if(s && Array.isArray(s.order) && s.order.length + (s.solved||[]).length*4 === 16) return s;
+  return freshState(p);
+}
+function persist(){ days[DAY]=st; save(K_DAYS,days); }
+
+// ── RENDER ──────────────────────────────────────────────────────────────────
+const gridEl=document.getElementById('grid'), solvedEl=document.getElementById('solved-area');
+function solvedBar(level, revealed){
+  const g=P.groups[level];
+  const d=document.createElement('div'); d.className=`solved g${level}`+(revealed?' revealed':'');
+  const c=document.createElement('div'); c.className='cat'; c.textContent=g.cat;
+  const w=document.createElement('div'); w.className='ws'; w.textContent=g.words.join(', ');
+  d.appendChild(c); d.appendChild(w); return d;
+}
+function render(){
+  solvedEl.innerHTML='';
+  st.solved.forEach(l=>solvedEl.appendChild(solvedBar(l,false)));
+  if(st.status==='lost') P.groups.forEach(g=>{ if(!st.solved.includes(g.level)) solvedEl.appendChild(solvedBar(g.level,true)); });
+  gridEl.innerHTML='';
+  if(st.status==='playing'){
+    st.order.forEach(w=>{
+      const b=document.createElement('button'); b.type='button'; b.className='tile'+(selected.includes(w)?' sel':''); b.dataset.w=w;
+      const s=document.createElement('span'); s.textContent=BREAKS[w]?BREAKS[w].replace('|','\u00AD'):w; b.appendChild(s);
+      b.addEventListener('click',()=>toggle(w,b));
+      gridEl.appendChild(b);
+    });
+    fitTiles();
+  }
+  const dots=document.querySelectorAll('#dots i');
+  dots.forEach((d,i)=>d.classList.toggle('gone', i>=MAX_MISTAKES-st.mistakes));
+  const done = st.status!=='playing';
+  document.getElementById('mistakes-row').style.display = done?'none':'flex';
+  document.getElementById('controls').style.display = done?'none':'flex';
+  document.getElementById('after').style.display = done?'flex':'none';
+  document.getElementById('lead').textContent = done ? (st.status==='won' ? (st.mistakes===0?'Perfect! No mistakes.':'Solved!') : 'Next time! Here are the answers.') : 'Create four groups of four!';
+  updateButtons();
+}
+// Shrink long words so they always fit their tile on one line
+function fitTiles(){
+  const base = window.innerWidth<420 ? 15 : 17;
+  gridEl.querySelectorAll('.tile').forEach(t=>{
+    const s=t.firstChild; let fs=base;
+    t.classList.remove('wrap'); t.style.fontSize=fs+'px';
+    const cs=getComputedStyle(t), padX=parseFloat(cs.paddingLeft)+parseFloat(cs.paddingRight), padY=parseFloat(cs.paddingTop)+parseFloat(cs.paddingBottom);
+    const availW=t.clientWidth-padX-1, availH=t.clientHeight-padY-2;
+    let guard=0;
+    // 1) one line, shrinking down to a readable minimum
+    while(s.scrollWidth>availW && fs>12 && guard++<30){ fs-=0.5; t.style.fontSize=fs+'px'; }
+    if(s.scrollWidth<=availW) return;
+    // 2) still too long: allow a break at the hyphen point, then shrink to fit two lines
+    t.classList.add('wrap'); fs=Math.min(base,14); t.style.fontSize=fs+'px';
+    guard=0;
+    while((s.scrollWidth>s.clientWidth+1 || s.offsetHeight>availH) && fs>9 && guard++<30){ fs-=0.5; t.style.fontSize=fs+'px'; }
+  });
+}
+let resizeT=null; window.addEventListener('resize',()=>{ clearTimeout(resizeT); resizeT=setTimeout(fitTiles,120); });
+function updateButtons(){
+  document.getElementById('submit-btn').disabled = busy || selected.length!==4;
+  document.getElementById('deselect-btn').disabled = busy || selected.length===0;
+  document.getElementById('shuffle-btn').disabled = busy;
+}
+
+// ── INPUT ───────────────────────────────────────────────────────────────────
+function toggle(w, el){
+  if(busy || st.status!=='playing') return;
+  const i=selected.indexOf(w);
+  if(i>=0){ selected.splice(i,1); el.classList.remove('sel'); }
+  else { if(selected.length>=4) return; selected.push(w); el.classList.add('sel'); }
+  updateButtons();
+}
+function deselectAll(){ if(busy) return; selected=[]; gridEl.querySelectorAll('.tile.sel').forEach(t=>t.classList.remove('sel')); updateButtons(); }
+function shuffleTiles(){
+  if(busy || st.status!=='playing') return;
+  busy=true; updateButtons(); gridEl.classList.add('fade');
+  setTimeout(()=>{
+    let a=st.order.slice();
+    for(let k=0;k<10;k++){ a=seededShuffle(st.order, Math.floor(Math.random()*1e9)); if(a.join()!==st.order.join()) break; }
+    st.order=a; persist(); gridEl.classList.remove('fade'); busy=false; render();
+  },180);
+}
+function sameSet(a,b){ return a.length===b.length && a.every(x=>b.includes(x)); }
+function submitGuess(){
+  if(busy || st.status!=='playing' || selected.length!==4) return;
+  const guess=selected.slice();
+  if(st.guesses.some(g=>sameSet(g,guess))){ toast('Already guessed!'); return; }
+  busy=true; updateButtons();
+  // little "jump" wave on the selected tiles, in grid order
+  const tiles=[...gridEl.querySelectorAll('.tile.sel')];
+  tiles.forEach((t,i)=>setTimeout(()=>{ t.classList.remove('jump'); void t.offsetWidth; t.classList.add('jump'); }, i*90));
+  setTimeout(()=>{
+    st.guesses.push(guess);
+    const levels=guess.map(w=>P.groupOf[w]);
+    const counts={}; levels.forEach(l=>counts[l]=(counts[l]||0)+1);
+    const best=Math.max(...Object.values(counts));
+    if(best===4){
+      const level=levels[0];
+      st.solved.push(level);
+      st.order=st.order.filter(w=>!guess.includes(w));
+      selected=[];
+      if(st.solved.length===4) st.status='won';
+      persist(); busy=false; render();
+      if(st.status==='won') finish(true);
+    } else {
+      st.mistakes++;
+      if(st.mistakes>=MAX_MISTAKES) st.status='lost';
+      persist();
+      gridEl.classList.remove('shake'); void gridEl.offsetWidth; gridEl.classList.add('shake');
+      toast(best===3 ? 'One away…' : (st.status==='lost'?'Out of mistakes':'Not quite'));
+      setTimeout(()=>{
+        gridEl.classList.remove('shake');
+        const dots=document.querySelectorAll('#dots i');
+        dots.forEach((d,i)=>d.classList.toggle('gone', i>=MAX_MISTAKES-st.mistakes));
+        if(st.status==='lost'){ selected=[]; revealRemaining(); }
+        else { busy=false; updateButtons(); }
+      },500);
+    }
+  }, 4*90+260);
+}
+// After a loss, slide the unsolved groups in one by one (easiest first)
+function revealRemaining(){
+  busy=true;
+  const left=P.groups.map(g=>g.level).filter(l=>!st.solved.includes(l));
+  let i=0;
+  const step=()=>{
+    if(i>=left.length){ busy=false; render(); finish(false); return; }
+    const l=left[i++];
+    const words=P.groups[l].words;
+    st.order=st.order.filter(w=>!words.includes(w));
+    gridEl.querySelectorAll('.tile').forEach(t=>{ if(words.includes(t.dataset.w)) t.remove(); });
+    solvedEl.appendChild(solvedBar(l,true));
+    setTimeout(step,700);
+  };
+  document.getElementById('mistakes-row').style.display='none';
+  document.getElementById('controls').style.display='none';
+  setTimeout(step,400);
+}
+
+// ── FINISH / STATS / LEADERBOARD ────────────────────────────────────────────
+function finish(won){
+  const myDay=DAY;
+  const later=(ms)=>setTimeout(()=>{ if(DAY===myDay) openStats(); }, ms);
+  if(isArchive){ toast(won?(st.mistakes===0?'Perfect!':'Solved!'):'Next time!', 1600); later(won?1400:900); return; }
+  if(stats.lastDay!==TODAY){
+    stats.played++;
+    if(won){ stats.won++; stats.streak=(stats.lastDay===TODAY-1)?stats.streak+1:1; stats.max=Math.max(stats.max,stats.streak); if(st.mistakes===0) stats.perfect++; }
+    else stats.streak=0;
+    stats.lastDay=TODAY; save(K_STATS,stats);
+    if(won){
+      const score=[1000,800,600,400][st.mistakes] + Math.min(250, 25*stats.streak);
+      st.score=score; persist();
+      const note=document.getElementById('lb-note'); note.dataset.daily='1';
+      note.textContent=`Score ${score} sent to the arcade leaderboard`; note.style.display='block';
+      setTimeout(()=>LB.submit('wordlinks', score, `#${TODAY+1} · ${st.mistakes} mistake${st.mistakes===1?'':'s'} · streak ${stats.streak}`, ()=>{}), 1500);
+      toast(st.mistakes===0?'Perfect!':'Solved!',1400);
+      return;   // leaderboard prompt opens first; results available via button
+    }
+  }
+  toast(won?(st.mistakes===0?'Perfect!':'Solved!'):'Next time!', 1600);
+  later(won?1400:900);
+}
+function winPct(){ return stats.played?Math.round(100*stats.won/stats.played):0; }
+function emojiGrid(){
+  const sq = ['🟨','🟩','🟦','🟪'];
+  return st.guesses.map(g=>g.map(w=>sq[P.groupOf[w]]).join('')).join('\n');
+}
+function openStats(){
+  document.getElementById('s-played').textContent=stats.played;
+  document.getElementById('s-win').textContent=winPct();
+  document.getElementById('s-streak').textContent=(stats.lastDay>=TODAY-1)?stats.streak:0;
+  document.getElementById('s-max').textContent=stats.max;
+  document.getElementById('s-perfect').textContent=stats.perfect;
+  const done=st.status!=='playing';
+  document.getElementById('result-box').style.display=done?'block':'none';
+  if(done){
+    document.getElementById('result-title').textContent = (isArchive?`#${DAY+1} · `:'') + (st.status==='won' ? (st.mistakes===0?'PERFECT!':`SOLVED · ${st.mistakes} MISTAKE${st.mistakes===1?'':'S'}`) : 'NEXT TIME!');
+    document.getElementById('result-title').style.color = st.status==='won' ? 'var(--correct)' : 'var(--magenta)';
+    document.getElementById('emoji').textContent=emojiGrid();
+    document.getElementById('next-row').style.display='flex';
+    document.getElementById('clock-box').style.display=isArchive?'none':'block';
+    if(!isArchive) tickClock(); else clearInterval(clockTimer);
+  } else document.getElementById('next-row').style.display='none';
+  document.getElementById('arch-row').style.display=(done||isArchive)?'flex':'none';
+  document.getElementById('arch-today2').style.display=isArchive?'':'none';
+  const note=document.getElementById('lb-note');
+  if(isArchive){ note.textContent='Archive puzzle — practice only, not counted in your stats or the leaderboard'; note.style.display='block'; }
+  else if(done && st.score){ note.textContent=`Today's score: ${st.score}`; note.style.display='block'; }
+  else note.style.display='none';
+  show('stats-overlay');
+}
+let clockTimer=null;
+function tickClock(){
+  clearInterval(clockTimer);
+  const el=document.getElementById('clock');
+  const upd=()=>{ const now=new Date(); const next=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1); const s=Math.max(0,Math.floor((next-now)/1000)); el.textContent=[Math.floor(s/3600),Math.floor(s%3600/60),s%60].map(n=>String(n).padStart(2,'0')).join(':'); if(s===0){ clearInterval(clockTimer); location.reload(); } };
+  upd(); clockTimer=setInterval(upd,1000);
+}
+function shareText(){
+  return `GONZO'S WORD LINKS #${DAY+1}${isArchive?' (archive)':''}\n${emojiGrid()}\n\ngonzogonzo.com`;
+}
+async function share(){
+  const text=shareText();
+  try{
+    if(navigator.share && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)){ await navigator.share({text}); return; }
+    await navigator.clipboard.writeText(text); toast('Copied to clipboard');
+  }catch(e){
+    if(e && e.name==='AbortError') return;
+    try{ const ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); toast('Copied to clipboard'); }
+    catch{ toast('Could not copy'); }
+  }
+}
+
+// ── ARCHIVE ─────────────────────────────────────────────────────────────────
+function setLabel(){
+  document.getElementById('puzzle-label').textContent = isArchive ? `ARCHIVE #${DAY+1} · ${shortDate(DAY).toUpperCase()}` : `DAILY PUZZLE #${DAY+1}`;
+  document.getElementById('today-btn').style.display = isArchive ? 'inline-block' : 'none';
+}
+function loadPuzzle(day){
+  if(busy) return;
+  if(!Number.isInteger(day) || day<0 || day>TODAY) return;
+  DAY=day; isArchive=day<TODAY; P=puzzleFor(day); st=dayState(day,P); selected=[];
+  document.querySelectorAll('.overlay.show').forEach(o=>o.classList.remove('show'));
+  document.getElementById('toast').classList.remove('show');
+  setLabel(); render();
+  if(st.status!=='playing') setTimeout(()=>{ if(DAY===day) openStats(); }, 500);
+  window.scrollTo(0,0);
+}
+function openArchive(){
+  const grid=document.getElementById('arch-grid'); grid.innerHTML='';
+  if(TODAY<1){ const p=document.createElement('p'); p.className='note'; p.style.gridColumn='1/-1'; p.textContent='No past puzzles yet — come back tomorrow!'; grid.appendChild(p); }
+  for(let d=TODAY-1; d>=0; d--){
+    const s=days[d]; let cls='', res='';
+    if(s && s.guesses && s.guesses.length){ cls=' '+s.status; res = s.status==='won' ? (s.mistakes===0?'perfect':`${s.mistakes} miss`) : s.status==='lost' ? 'missed' : 'started'; }
+    const b=document.createElement('button'); b.type='button';
+    b.className='arch-item'+cls+((isArchive&&DAY===d)?' cur':'');
+    b.innerHTML=`#${d+1}<small>${shortDate(d)}${res?' · '+res:''}<\/small>`;
+    b.addEventListener('click',()=>loadPuzzle(d));
+    grid.appendChild(b);
+  }
+  show('archive-overlay');
+}
+
+// ── UI PLUMBING ─────────────────────────────────────────────────────────────
+let toastTimer=null;
+function toast(msg, ms=1400){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'), ms); }
+function show(id){ document.getElementById(id).classList.add('show'); }
+function hide(id){ document.getElementById(id).classList.remove('show'); }
+document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>hide(b.dataset.close)));
+document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{ if(e.target===o) hide(o.id); }));
+document.getElementById('help-btn').addEventListener('click',()=>show('help-overlay'));
+document.getElementById('archive-btn').addEventListener('click',openArchive);
+document.getElementById('stats-btn').addEventListener('click',openStats);
+document.getElementById('settings-btn').addEventListener('click',()=>{ syncToggles(); show('settings-overlay'); });
+document.getElementById('share-btn').addEventListener('click',share);
+document.getElementById('shuffle-btn').addEventListener('click',shuffleTiles);
+document.getElementById('deselect-btn').addEventListener('click',deselectAll);
+document.getElementById('submit-btn').addEventListener('click',submitGuess);
+document.getElementById('results-btn').addEventListener('click',openStats);
+document.getElementById('after-arch').addEventListener('click',openArchive);
+document.getElementById('arch-open2').addEventListener('click',()=>{ hide('stats-overlay'); openArchive(); });
+document.getElementById('arch-today2').addEventListener('click',()=>loadPuzzle(TODAY));
+document.getElementById('today-btn').addEventListener('click',()=>loadPuzzle(TODAY));
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape') document.querySelectorAll('.overlay.show').forEach(o=>o.classList.remove('show'));
+  else if(e.key==='Enter' && !document.querySelector('.overlay.show')){ e.preventDefault(); submitGuess(); }
+});
+const cbT=document.getElementById('cb-toggle');
+function syncToggles(){ cbT.classList.toggle('on',settings.cb); }
+cbT.addEventListener('click',()=>{ settings.cb=!settings.cb; save(K_SET,settings); applyCb(); syncToggles(); });
+function applyCb(){ document.body.classList.toggle('cb', settings.cb); }
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden && !busy && localDayNumber()!==TODAY && localDayNumber()>=0) location.reload(); });
+
+// ── INIT ────────────────────────────────────────────────────────────────────
+applyCb();
+loadPuzzle(TODAY);
+if(stats.played===0 && !Object.keys(days).length) show('help-overlay');
+if(document.fonts && document.fonts.ready) document.fonts.ready.then(fitTiles);
+</script>
+</body>
+</html>
