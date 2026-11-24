@@ -116,10 +116,11 @@
 <script src="firebase-config.js"></script>
 <script src="leaderboard.js"></script>
 <script>
-// Mirrors the arcade hub (index.html) exactly: same two sections, same order.
+// Mirrors the arcade hub (index.html) exactly: same three sections, same order.
 // `id` must match the string each game passes to LB.submit().
 const SECTIONS = [
   { key:'classic', title:'CLASSIC GAMES', sub:'ARCADE FAVORITES', color:'#f72585' },
+  { key:'word',    title:'WORD GAMES',    sub:'PLAY WITH WORDS',  color:'#f9c74f' },
   { key:'brain',   title:'BRAIN GAMES',   sub:'TRAIN YOUR MIND',  color:'#9b5de5' },
 ];
 const GAMES = [
@@ -131,6 +132,10 @@ const GAMES = [
   { section:'classic', id:'asteroids',    title:'ASTEROIDS',        icon:'🌑', color:'#00f5d4', formula:'Score = asteroids destroyed × wave multiplier' },
   { section:'classic', id:'flappy',       title:'FLAPPY\nBIRD',     icon:'🐦', color:'#f9c74f', formula:'Score = pipes passed' },
   { section:'classic', id:'snake',        title:'SNAKE\nCLASSIC',  icon:'🐍', color:'#06d6a0', formula:'Score = food eaten × (10 + level bonus)' },
+  // ── Word Games ──
+  { section:'word',    id:'wordle',       title:'WORD\nSCRAMBLE',   icon:'🟩', color:'#9b5de5', formula:'Score = 600/500/400/300/200/100 by guess count + streak bonus' },
+  { section:'word',    id:'wordhive',     title:'WORD\nHIVE',       icon:'🐝', color:'#f9c74f', formula:'Score = points found ÷ maximum points × 1000 (one submission per day)' },
+  { section:'word',    id:'wordlinks',    title:'WORD\nLINKS',      icon:'🔗', color:'#4cc9f0', formula:'Score = 1000/800/600/400 by mistakes + streak bonus' },
   // ── Brain Games ──
   { section:'brain',   id:'sound_memory', title:'SOUND\nMEMORY',   icon:'🎵', color:'#f72585', formula:'Score = rounds cleared × 100' },
   { section:'brain',   id:'nback',        title:'N-BACK\nMEMORY',   icon:'🧠', color:'#00f5d4', formula:'Score = weighted hits/misses × N-level multiplier' },
@@ -138,9 +143,7 @@ const GAMES = [
   { section:'brain',   id:'reaction',     title:'REACTION\nTEST',   icon:'⚡', color:'#4cc9f0', formula:'Score = 50000 ÷ avg reaction time (ms)' },
   { section:'brain',   id:'stroop',       title:'STROOP\nTEST',     icon:'🎨', color:'#9b5de5', formula:'Score = correct × 100 ÷ (time×50% + errors×50%)' },
   { section:'brain',   id:'typerace',     title:'TYPE\nRUSH',       icon:'⌨️', color:'#f72585', formula:'Score = WPM × accuracy%' },
-  { section:'brain',   id:'wordle',       title:'WORD\nSCRAMBLE',   icon:'🟩', color:'#9b5de5', formula:'Score = 600/500/400/300/200/100 by guess count + streak bonus' },
-  { section:'brain',   id:'wordhive',     title:'WORD\nHIVE',       icon:'🐝', color:'#f9c74f', formula:'Score = points found ÷ maximum points × 1000 (one submission per day)' },
-  { section:'brain',   id:'wordlinks',    title:'WORD\nLINKS',      icon:'🔗', color:'#4cc9f0', formula:'Score = 1000/800/600/400 by mistakes + streak bonus' },
+  { section:'brain',   id:'sudoku',       title:'SUDOKU',            icon:'🔢', color:'#00f5d4', formula:'Score = difficulty base (1000–5000) − ½ pt/sec − 150/mistake shown − 100/check − 300/hint' },
 ];
 
 function fmtDate(ts) {
